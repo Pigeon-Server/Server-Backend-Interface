@@ -128,3 +128,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+.idea/*
+/certificate/certificate.crt
+/certificate/certificate.key
+config.json
