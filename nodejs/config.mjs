@@ -1,6 +1,5 @@
 import {createRequire} from 'module';
 import fs, {accessSync, constants, writeFileSync} from 'fs';
-import path from "path";
 
 const require = createRequire(import.meta.url);
 
