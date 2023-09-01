@@ -1,7 +1,14 @@
 import {createRequire} from 'module';
-import {accessSync, constants, writeFileSync} from 'fs';
+import fs, {accessSync, constants, writeFileSync} from 'fs';
+import path from "path";
 
 const require = createRequire(import.meta.url);
+
+try {
+    accessSync('update', constants.F_OK)
+} catch (ignored) {
+    fs.mkdir('update', {recursive: true})
+}
 export const config = require('../config.json');
 try {
     accessSync('update/packages.json', constants.F_OK)

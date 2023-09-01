@@ -31,12 +31,12 @@ export function randomArr(max, length = 1) {
 }
 
 export function dataBaseInjectionFiltering(str) {
-    return str.toString().toLowerCase().match("and|drop|;|sleep|\'|delete|or|true|false|version|insert|into|select|join|like|union|update|where|\"");
+    return str.toString().toLowerCase().match("\b(and|drop|;|sleep|\'|delete|or|true|false|version|insert|into|select|join|like|union|update|where|\")\b");
 }
 
 export function checkInput(array) {
     for (const item in array) {
-        if (dataBaseInjectionFiltering(array[item])) {
+        if (array[item] && dataBaseInjectionFiltering(array[item])) {
             error.error(`SQL injection detected, illegal statement: ${array[item]}`);
             return true;
         }
