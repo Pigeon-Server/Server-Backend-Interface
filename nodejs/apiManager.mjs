@@ -8,7 +8,7 @@ const userCache = new Map();
 const adminCache = new Map();
 const userExist = new Map();
 setInterval(() => {
-    userCache.clear();
+    logoutALL().then(() => userCache.clear());
     adminCache.clear();
     userExist.clear();
     logger.debug("Clear Api Cache.");
@@ -103,34 +103,19 @@ export async function login(username, clientToken, password) {
     return false;
 }
 
-export async function judgeUser(username, uuid, res) {
-    const response = await axios.get(`/api/ps-api/player/status/${username}`, {
-        headers: {
-            "api-key": config.apikey.key
-        }
-    });
-    if (response.data.status === '0') {
-        res.status(404).json({status: false, msg: `账号${username}不存在`});
-        return true;
-    }
-    if (response.data.userstatus === '0') {
-        res.status(403).json({status: false, msg: `账号${username}已被封禁`});
-        return true;
-    }
-    if (response.data.playeruuid !== uuid) {
-        res.status(403).json({status: false, msg: `UUID验证失败`});
-        return true;
-    }
-    return false;
-}
-
-export async function getPlayerStatus(username, uuid) {
+export async function getPlayerStatus(username, uuid, res) {
     if (userExist.has(username)) {
         switch (userExist.get(username)) {
-            case true:
+            case 1:
                 return true;
-            case false:
-            case null:
+            case 2:
+                res.status(435).json({status: false, msg: `账号${username}不存在`});
+                return false;
+            case 3:
+                res.status(436).json({status: false, msg: `账号${username}已被封禁`});
+                return false;
+            case 4:
+                res.status(437).json({status: false, msg: `UUID验证失败`});
                 return false;
         }
     }
@@ -141,17 +126,20 @@ export async function getPlayerStatus(username, uuid) {
     });
     const {status, userstatus, playeruuid} = response.data;
     if (status !== "1") {
-        userExist.set(username, null);
+        res.status(435).json({status: false, msg: `账号${username}不存在`});
+        userExist.set(username, 2);
         return false;
     }
     if (userstatus === "0") {
-        userExist.set(username, false);
+        res.status(436).json({status: false, msg: `账号${username}已被封禁`});
+        userExist.set(username, 3);
         return false;
     }
     if (playeruuid !== uuid) {
-        userExist.set(username, false);
+        res.status(437).json({status: false, msg: `UUID验证失败`});
+        userExist.set(username, 4);
         return false;
     }
-    userExist.set(username, true);
+    userExist.set(username, 1);
     return true;
 }

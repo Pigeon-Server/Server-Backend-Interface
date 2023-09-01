@@ -8,7 +8,7 @@ import archiver from 'archiver';
 import {config, packageConfig, savePackageConfig} from "../nodejs/config.mjs";
 import {calculateMd5, generateKey, stringMd5} from "../nodejs/utils.mjs";
 import {addUserAccess, addUserAccount, checkUserAccount, getKey, setKey, updateTime} from "../nodejs/mysql.mjs";
-import {getPlayerStatus, judgeUser, login} from "../nodejs/apiManager.mjs";
+import {getPlayerStatus, login} from "../nodejs/apiManager.mjs";
 
 export const router = express.Router();
 expressWS(router);
@@ -79,30 +79,41 @@ router.post("/upload-upgrade", upload.single("file"), async (req, res) => {
 });
 
 router.use(async (req, res, next) => {
-    const {macAddress, uuid, username} = req.query;
+    const {macAddress, uuid, username, packName} = req.query;
     // 验证参数
     if ([macAddress, uuid, username].includes(undefined)) {
         logger.warn(`Access Denial: Missing parameter`);
-        res.status(403).json({status: false, msg: "无身份标识,拒绝访问"});
+        res.status(401).json({status: false, msg: "无身份标识,拒绝访问"});
         return;
     }
     // api访问限制
     if (!tracker.trackIP(req.ip, macAddress)) {
         logger.warn(`Access Denial: Api call limit`);
-        res.status(429).json({msg: "超出API访问限制"});
+        res.status(429).json({status: false, msg: "超出API访问限制"});
         return;
     }
     // 验证账号
-    if (await judgeUser(username, uuid, res)) {
+    if (!(await getPlayerStatus(username, uuid, res))) {
         logger.warn(`Access Denial: Account verification failed`);
         return;
+    }
+    const result = await checkUserAccount(username, uuid, macAddress).catch(err => error.error(err.message));
+    if (result === undefined) {
+        logger.warn(`Access Denial: Mysql database error.`);
+        res.status(500).json({status: false, msg: "服务器内部出错,请联系管理员"});
+        return;
+    }
+    if (result.length === 1) {
+        updateTime(username, uuid, macAddress, packName).catch(err => error.error(err.message));
+    } else {
+        await addUserAccount(username, uuid, macAddress, req.ip, packName).catch(err => error.error(err.message));
     }
     next();
 });
 
 router.get("/get-access-key", async (req, res) => {
     const {macAddress, username, uuid} = req.query;
-    const result = await getKey(username, uuid);
+    const result = await getKey(username, uuid, macAddress);
     if (result.length === 1) {
         logger.info(`Send key ${result[0].accessKey} for ${username}.`);
         res.status(200).json({status: true, key: result[0].accessKey});
@@ -119,38 +130,22 @@ router.get("/get-access-key", async (req, res) => {
 });
 
 router.use(async (req, res, next) => {
-    const {macAddress, uuid, username, accessKey, packName} = req.query;
+    const {uuid, username, accessKey, packName, macAddress} = req.query;
     if (accessKey === undefined) {
         logger.warn(`Access Denial: No accessKey`);
         res.status(403).json({status: false, msg: "无accessKey"});
         return;
     }
-    const response = await getKey(username, uuid);
+    const response = await getKey(username, uuid, macAddress);
     if (response.length === 0 || response[0].accessKey !== accessKey) {
         logger.warn(`Access Denial: Invalid accessKey ${accessKey}`);
-        res.status(403).json({status: false, msg: "accessKey无效"});
+        res.status(438).json({status: false, msg: "accessKey无效"});
         return;
     }
     if (packName === undefined) {
         logger.warn(`Access Denial: No packName`);
-        res.status(400).json({status: false, msg: "未指定包名"});
+        res.status(439).json({status: false, msg: "未指定包名"});
         return;
-    }
-    if (!(await getPlayerStatus(username, uuid).catch(err => error.error(err.message)))) {
-        logger.warn(`Access Denial: Invalid username(${username}) or UUID(${uuid})`);
-        res.status(403).json({status: false, msg: "用户名或UUID无效"});
-        return;
-    }
-    const result = await checkUserAccount(username, uuid).catch(err => error.error(err.message));
-    if (result === undefined) {
-        logger.warn(`Access Denial: Mysql database error.`);
-        res.status(500).json({status: false, msg: "服务器内部出错,请联系管理员"});
-        return;
-    }
-    if (result.length === 1) {
-        updateTime(username, uuid, packName).catch(err => error.error(err.message));
-    } else {
-        addUserAccount(username, uuid, macAddress, req.ip, packName).catch(err => error.error(err.message));
     }
     next();
 });
@@ -161,12 +156,12 @@ router.get("/check-update", async (req, res) => {
         fs.accessSync(`update/${packName}`, fs.constants.F_OK);
     } catch (ignored) {
         logger.warn(`Access Denial: Unable to get update info.`);
-        res.status(404).json({status: false, msg: "无法获取更新信息"});
+        res.status(440).json({status: false, msg: "无法获取更新信息"});
         return;
     }
     if (!(packName in packageConfig)) {
         logger.warn(`Access Denial: The consolidation package configuration file could not be found.`);
-        res.status(404).json({status: false, msg: "无法找到该整合包配置文件"});
+        res.status(441).json({status: false, msg: "无法找到该整合包配置文件"});
         return;
     }
     const files = [];
@@ -182,7 +177,7 @@ router.get("/check-update", async (req, res) => {
         const tmp = calculateMd5(packageConfig[packName][i]["path"]);
         if (tmp !== packageConfig[packName][i]["md5"]) {
             logger.warn(`Access Denial: Profile MD5 validation failed.`);
-            res.status(500).json({status: false, msg: "服务器配置文件验证失败,请联系管理员"});
+            res.status(515).json({status: false, msg: "服务器配置文件验证失败,请联系管理员"});
             return;
         }
         temp += tmp;
@@ -191,21 +186,16 @@ router.get("/check-update", async (req, res) => {
             name: packageConfig[packName][i]["name"]
         })
     }
+    res.setHeader("X-Mod-Sync-Mode", config.syncMode.mod);
+    res.setHeader("X-Config-Sync-Mode", config.syncMode.config);
+    res.setHeader("X-Update-Max-Threads", config.syncMode.updateMaxThread);
     if (localSource !== undefined && localSource.toLowerCase() === stringMd5(temp)) {
+        logger.debug(`Same MD5 ${localSource} with client, send nothing.`);
         res.status(304).send();
         return;
     }
+    res.status(200);
     const zip = archiver('zip', {zlib: {level: 9}});
-    switch (config.syncMode) {
-        case "force":
-            res.status(202);
-            break;
-        case "increment":
-            res.status(201);
-            break;
-        default:
-            res.status(200);
-    }
     zip.pipe(res);
     files.forEach(file => {
         zip.file(file.path, {name: file.name});
@@ -215,8 +205,9 @@ router.get("/check-update", async (req, res) => {
     }).catch(err => error.error(`Update file send error, ${err.message}`));
 });
 
-router.get("/get-source", async (req, res) => {
-    const {macAddress, uuid, username, packName, path} = req.query;
+router.get("/get-source/:path(*)", async (req, res) => {
+    const {macAddress, uuid, username, packName} = req.query;
+    const path = req.params.path;
     addUserAccess(username, uuid, macAddress, req.ip, packName, path).catch(err => error.error(err.message));
     const destinationPath = `source/${packName}/${path}`;
     try {
@@ -226,6 +217,6 @@ router.get("/get-source", async (req, res) => {
     } catch (err) {
         error.error(err.message);
         logger.warn(`Access Denial: Unable to find file.`);
-        res.status(404).json({message: "更新文件出错,请联系管理员"});
+        res.status(404).json({status: false, message: "更新文件出错,请联系管理员"});
     }
 });

@@ -32,7 +32,7 @@ export function databaseInit() {
             "`uuid` char(32) NOT NULL," +
             "`mac` char(20) NOT NULL," +
             "`ip` char(40) NOT NULL," +
-            "`lastPack` char(64) NOT NULL," +
+            "`lastPack` char(64)," +
             "`firstTime` datetime NOT NULL," +
             "`updateTime` datetime Not NULL," +
             "PRIMARY KEY (`id`, `username`, `uuid`)," +
@@ -119,40 +119,48 @@ export function addUserAccount(username, uuid, mac, ip, pack) {
     })
 }
 
-export function checkUserAccount(username, uuid) {
+export function checkUserAccount(username, uuid, mac) {
     return new Promise((resolve, reject) => {
-        if (checkInput([username, uuid])) {
+        if (checkInput([username, uuid, mac])) {
             reject(new Error("Illegal Input"));
             return
         }
         databasePool.query(`SELECT username
                             FROM \`${config.database.prefix}_user\`
                             WHERE username = ?
-                              AND uuid = ?`,
-            [username, uuid],
+                              AND uuid = ?
+                              AND mac = ?`,
+            [username, uuid, mac],
             (err, res) => err ? reject(err) : resolve(res))
     })
 }
 
-export function updateTime(username, uuid, pack) {
+export function updateTime(username, uuid, mac, pack = null) {
     return new Promise((resolve, reject) => {
-        if (checkInput([username, uuid, pack])) {
+        if (checkInput([username, uuid, pack, mac])) {
             reject(new Error("Illegal Input"));
             return
         }
-        databasePool.query(`UPDATE \`${config.database.prefix}_user\`
-                            SET updateTime = ?,
-                                lastPack   = ?
-                            WHERE username = ?
-                              AND uuid = ?`,
-            [getTime(false), pack, username, uuid],
-            (err, res) => err ? reject(err) : resolve(res))
+        if (pack === null) {
+            databasePool.query(`UPDATE \`${config.database.prefix}_user\`
+                                SET updateTime = ?
+                                WHERE username = ?
+                                  AND uuid = ?
+                                  AND mac = ?`,
+                [getTime(false), username, uuid, mac],
+                (err, res) => err ? reject(err) : resolve(res))
+        } else {
+            databasePool.query(`UPDATE \`${config.database.prefix}_user\`
+                                SET updateTime = ?, lastPack = ? WHERE username = ? AND uuid = ? AND mac = ?`,
+                [getTime(false), pack, username, uuid, mac],
+                (err, res) => err ? reject(err) : resolve(res))
+        }
     })
 }
 
-export function getKey(username, uuid) {
+export function getKey(username, uuid, mac) {
     return new Promise((resolve, reject) => {
-        if (checkInput([username, uuid])) {
+        if (checkInput([username, uuid, mac])) {
             reject(new Error("Illegal Input"));
             return
         }
@@ -160,8 +168,9 @@ export function getKey(username, uuid) {
                             FROM \`${config.database.prefix}_key\`
                             WHERE username = ?
                               AND uuid = ?
+                              AND mac = ?
                               AND enable = 1`,
-            [username, uuid],
+            [username, uuid, mac],
             (err, res) => err ? reject(err) : resolve(res))
     })
 }
