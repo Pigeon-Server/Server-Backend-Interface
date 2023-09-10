@@ -151,7 +151,11 @@ export function updateTime(username, uuid, mac, pack = null) {
                 (err, res) => err ? reject(err) : resolve(res))
         } else {
             databasePool.query(`UPDATE \`${config.database.prefix}_user\`
-                                SET updateTime = ?, lastPack = ? WHERE username = ? AND uuid = ? AND mac = ?`,
+                                SET updateTime = ?,
+                                    lastPack = ?
+                                WHERE username = ?
+                                  AND uuid = ?
+                                  AND mac = ?`,
                 [getTime(false), pack, username, uuid, mac],
                 (err, res) => err ? reject(err) : resolve(res))
         }

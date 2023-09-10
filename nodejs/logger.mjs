@@ -111,11 +111,11 @@ export const database = log4js.getLogger('database');
 export const connectionLogger = log4js.connectLogger(log4js.getLogger('connection'),
     {
         level: 'auto',
-        statusRules:[
-            { from: 200, to: 299, level: "debug"},
-            { from: 300, to: 399, level: "info"},
-            { from: 400, to: 499, level: "warn"},
-            { from: 500, to: 599, level: "error"}
+        statusRules: [
+            {from: 200, to: 299, level: "debug"},
+            {from: 300, to: 399, level: "info"},
+            {from: 400, to: 499, level: "warn"},
+            {from: 500, to: 599, level: "error"}
         ]
     });
 

@@ -10,9 +10,8 @@ import express from 'express';
 import expressWs from 'express-ws';
 import https from 'https';
 import http from 'http';
-import {config, savePackageConfig} from "./nodejs/config.mjs";
+import {config, saveSyncConfig} from "./nodejs/config.mjs";
 import {router as api} from "./router/apiRouter.mjs";
-import {logoutALL} from "./nodejs/apiManager.mjs";
 // 初始化express
 const app = express();
 
@@ -31,12 +30,11 @@ process.on('exit', (code) => {
     } else {
         logger.error(`About to exit with code: ${code}`);
     }
-    savePackageConfig();
+    saveSyncConfig();
     log4js.shutdown();
 });
 
 process.on('SIGINT', async () => {
-    await logoutALL();
     process.exit(-1);
 });
 

@@ -1,21 +1,14 @@
 import {createRequire} from 'module';
-import fs, {accessSync, constants, writeFileSync} from 'fs';
+import {writeFileSync} from 'fs';
+import {checkFileExist} from "./fileOperation.mjs";
 
 const require = createRequire(import.meta.url);
 
-try {
-    accessSync('update', constants.F_OK)
-} catch (ignored) {
-    fs.mkdir('update', {recursive: true})
-}
-export const config = require('../config.json');
-try {
-    accessSync('update/packages.json', constants.F_OK)
-} catch (ignored) {
-    writeFileSync(new URL('../update/packages.json', import.meta.url), "{}", {encoding: 'utf-8'});
-}
-export const packageConfig = require('../update/packages.json');
+checkFileExist('syncConfig.json', true, "{}");
 
-export function savePackageConfig() {
-    writeFileSync(new URL('../update/packages.json', import.meta.url), JSON.stringify(packageConfig), {encoding: 'utf-8'});
+export const syncConfig = require('../syncConfig.json');
+export const config = require('../config.json');
+
+export function saveSyncConfig() {
+    writeFileSync('syncConfig.json', JSON.stringify(syncConfig, null, 2), {encoding: 'utf-8'});
 }

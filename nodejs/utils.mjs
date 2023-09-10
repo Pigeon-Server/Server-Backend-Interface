@@ -1,9 +1,11 @@
 import {config} from "./config.mjs";
-import {readFileSync} from 'fs';
+import {readFileSync, readdirSync, statSync} from 'fs';
+import {join, relative} from 'path';
 import crypto from 'crypto';
 import moment from "moment-timezone";
 import {error} from "./logger.mjs";
 import stringRandom from 'string-random';
+import {checkFileExist} from "./fileOperation.mjs";
 
 moment.tz.setDefault('Asia/Shanghai');
 
@@ -52,7 +54,7 @@ export function enableHSTS(res) {
 }
 
 export function getTime(later) {
-    if(later)
+    if (later)
         return moment().add(config.apikey.timeout, "seconds").format('YYYY-MM-DD HH:mm:ss');
     return moment().format('YYYY-MM-DD HH:mm:ss');
 }
@@ -68,9 +70,34 @@ export function stringMd5(str) {
     return crypto.createHash('md5').update(str).digest('hex');
 }
 
-export function generateKey(){
+export function generateKey() {
     return stringRandom(32, {
         letters: true,
         numbers: false
     })
+}
+
+export function listFiles(directory) {
+    let filesArray = [];
+    const files = readdirSync(directory);
+    files.forEach(file => {
+        const filePath = join(directory, file);
+        const stat = statSync(filePath);
+        if (stat.isFile()) {
+            filesArray.push(filePath);
+        } else if (stat.isDirectory()) {
+            const subdirectoryFiles = listFiles(filePath);
+            filesArray = filesArray.concat(subdirectoryFiles);
+        }
+    });
+    return filesArray;
+}
+
+export function calculateFilesMd5(path) {
+    const files = listFiles(path);
+    const content = {};
+    for (const file of files) {
+        content[relative(path, file)] = calculateMd5(file);
+    }
+    return content;
 }

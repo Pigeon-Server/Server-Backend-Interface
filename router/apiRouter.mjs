@@ -1,82 +1,17 @@
 import express from "express";
 import expressWS from 'express-ws';
 import {error, logger} from "../nodejs/logger.mjs";
-import multer from "multer";
 import fs, {accessSync} from "fs";
 import {Tracker} from '../nodejs/IPTracker.mjs';
-import archiver from 'archiver';
-import {config, packageConfig, savePackageConfig} from "../nodejs/config.mjs";
-import {calculateMd5, generateKey, stringMd5} from "../nodejs/utils.mjs";
+import {config} from "../nodejs/config.mjs";
+import {generateKey, stringMd5} from "../nodejs/utils.mjs";
 import {addUserAccess, addUserAccount, checkUserAccount, getKey, setKey, updateTime} from "../nodejs/mysql.mjs";
-import {getPlayerStatus, login} from "../nodejs/apiManager.mjs";
+import {getPlayerStatus} from "../nodejs/apiManager.mjs";
+import {generateJsonToClient, syncConfigCache} from "../nodejs/syncFileManager.mjs";
 
 export const router = express.Router();
 expressWS(router);
-const upload = multer({dest: "upload/"});
 const tracker = new Tracker(config.callLimit.count, config.callLimit.time);
-router.post("/upload-upgrade", upload.single("file"), async (req, res) => {
-    const file = req.file;
-    const {username, token, packName, password} = req.body;
-    if ([username, token, password].includes(undefined)) {
-        res.status(401).json({status: false, msg: "访问参数错误"});
-        return
-    }
-    if (packName === undefined) {
-        res.status(400).json({status: false, msg: "未指定包名"});
-        return;
-    }
-    if (!file) {
-        res.status(400).json({status: false, msg: "未上传文件"});
-        return;
-    }
-    if (!Object.keys(config.adminDef).includes(username)) {
-        res.status(403).json({status: false, msg: "无权访问"});
-        return;
-    }
-    if (token !== config.adminDef[username]) {
-        res.status(403).json({status: false, msg: "token错误"});
-        return
-    }
-    const user = await login(username, token, password);
-    if (!user) {
-        res.status(403).json({status: false, msg: "登录失败"});
-        return
-    }
-    try {
-        fs.accessSync(`update/${packName}`, fs.constants.F_OK);
-    } catch (ignored) {
-        fs.mkdirSync(`update/${packName}`);
-    }
-    const md5 = calculateMd5(file.path);
-    const destinationPath = `update/${packName}/${file.originalname}`;
-    if (!(packName in packageConfig)) {
-        packageConfig[packName] = {files: []};
-    }
-    if (packageConfig[packName]["files"].includes(file.originalname)) {
-        if (packageConfig[packName][file.originalname]['md5'] === md5) {
-            res.status(200).json({status: true, msg: "文件无变化"});
-            fs.unlink(file.path, err => err ? error.error(err.message) : logger.info(`Delete file ${file.path}`));
-            logger.info(`File ${file.originalname} has same MD5 ${md5}.`);
-            return;
-        }
-    } else {
-        packageConfig[packName]["files"].push(file.originalname);
-        packageConfig[packName][file.originalname] = {
-            'path': destinationPath,
-            'name': file.originalname,
-            md5
-        };
-    }
-    fs.rename(file.path, destinationPath, (err) => {
-        if (err) {
-            error.error(`Save file error, ${file.originalname}`);
-            return;
-        }
-        logger.info(`Save file ${file.originalname} to ${destinationPath}`);
-    });
-    res.status(200).json({status: true, msg: "上传成功"});
-    savePackageConfig();
-});
 
 router.use(async (req, res, next) => {
     const {macAddress, uuid, username, packName} = req.query;
@@ -152,57 +87,37 @@ router.use(async (req, res, next) => {
 
 router.get("/check-update", async (req, res) => {
     const {packName, localSource} = req.query;
-    try {
-        fs.accessSync(`update/${packName}`, fs.constants.F_OK);
-    } catch (ignored) {
-        logger.warn(`Access Denial: Unable to get update info.`);
-        res.status(440).json({status: false, msg: "无法获取更新信息"});
-        return;
-    }
-    if (!(packName in packageConfig)) {
+    if (syncConfigCache[packName] === undefined) {
         logger.warn(`Access Denial: The consolidation package configuration file could not be found.`);
         res.status(441).json({status: false, msg: "无法找到该整合包配置文件"});
         return;
     }
-    const files = [];
-    let temp = "";
-    for (const index in packageConfig[packName]["files"]) {
-        const i = packageConfig[packName]["files"][index];
-        try {
-            fs.accessSync(packageConfig[packName][i]["path"], fs.constants.F_OK);
-        } catch (ignored) {
-            error.error(`Cannot find file ${packageConfig[packName][i]["path"]}`);
-            continue;
-        }
-        const tmp = calculateMd5(packageConfig[packName][i]["path"]);
-        if (tmp !== packageConfig[packName][i]["md5"]) {
-            logger.warn(`Access Denial: Profile MD5 validation failed.`);
-            res.status(515).json({status: false, msg: "服务器配置文件验证失败,请联系管理员"});
-            return;
-        }
-        temp += tmp;
-        files.push({
-            path: packageConfig[packName][i]["path"],
-            name: packageConfig[packName][i]["name"]
-        })
+    const {basePath} = syncConfigCache[packName];
+    if (basePath === undefined) {
+        logger.warn(`Access Denial: Unable to get baseBath for pack ${packName}.`);
+        res.status(440).json({status: false, msg: "无法获取更新信息"});
+        return;
     }
-    res.setHeader("X-Mod-Sync-Mode", config.syncMode.mod);
-    res.setHeader("X-Config-Sync-Mode", config.syncMode.config);
-    res.setHeader("X-Update-Max-Threads", config.syncMode.updateMaxThread);
-    if (localSource !== undefined && localSource.toLowerCase() === stringMd5(temp)) {
+    try {
+        fs.accessSync(`${basePath}`, fs.constants.F_OK);
+    } catch (ignored) {
+        logger.warn(`Access Denial: Unable to read basePath ${basePath} for pack ${packName}.`);
+        res.status(440).json({status: false, msg: "无法获取更新信息"});
+        return;
+    }
+    res.setHeader("X-Update-Max-Threads", config.updateMaxThread);
+    const clientJson = generateJsonToClient(syncConfigCache[packName]);
+    if (stringMd5(JSON.stringify(clientJson)) !== syncConfigCache[packName].md5) {
+        logger.warn(`Access Denial: Profile MD5 validation failed.`);
+        res.status(515).json({status: false, msg: "服务器配置文件验证失败,请联系管理员"});
+        return;
+    }
+    if (localSource !== undefined && localSource.toLowerCase() === syncConfigCache[packName].md5) {
         logger.debug(`Same MD5 ${localSource} with client, send nothing.`);
         res.status(304).send();
         return;
     }
-    res.status(200);
-    const zip = archiver('zip', {zlib: {level: 9}});
-    zip.pipe(res);
-    files.forEach(file => {
-        zip.file(file.path, {name: file.name});
-    });
-    zip.finalize().then((_) => {
-        logger.info(`Update file send successfully, packName: ${packName}`)
-    }).catch(err => error.error(`Update file send error, ${err.message}`));
+    res.status(200).json(clientJson);
 });
 
 router.get("/get-source/:path(*)", async (req, res) => {

@@ -1,0 +1,31 @@
+{
+  "test": {
+    "init": false,
+    "data": [],
+    "basePath": "source/test",
+    "config": {
+      "mode": "push",
+      "serverPath": "config",
+      "files": null,
+      "delete": []
+    },
+    "mods": {
+      "mode": "mirror",
+      "serverPath": "mods",
+      "files": null,
+      "delete": []
+    },
+    "files": {
+      "servers.dat": null,
+      "xray.zip": "del"
+    }
+  },
+  "publicKey": [
+    "init",
+    "data",
+    "files",
+    "basePath",
+    "md5",
+    "publicKey"
+  ]
+}
