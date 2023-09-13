@@ -82,11 +82,6 @@ router.use(async (req, res, next) => {
         res.status(439).json({status: false, msg: "未指定包名"});
         return;
     }
-    next();
-});
-
-router.get("/check-update", async (req, res) => {
-    const {packName, localSource} = req.query;
     if (syncConfigCache[packName] === undefined) {
         logger.warn(`Access Denial: The consolidation package configuration file could not be found.`);
         res.status(441).json({status: false, msg: "无法找到该整合包配置文件"});
@@ -105,6 +100,11 @@ router.get("/check-update", async (req, res) => {
         res.status(440).json({status: false, msg: "无法获取更新信息"});
         return;
     }
+    next();
+});
+
+router.get("/check-update", async (req, res) => {
+    const {packName, localSource} = req.query;
     res.setHeader("X-Update-Max-Threads", config.updateMaxThread);
     const clientJson = generateJsonToClient(syncConfigCache[packName]);
     if (stringMd5(JSON.stringify(clientJson)) !== syncConfigCache[packName].md5) {
@@ -124,7 +124,8 @@ router.get("/get-source/:path(*)", async (req, res) => {
     const {macAddress, uuid, username, packName} = req.query;
     const path = req.params.path;
     addUserAccess(username, uuid, macAddress, req.ip, packName, path).catch(err => error.error(err.message));
-    const destinationPath = `source/${packName}/${path}`;
+    const {basePath} = syncConfigCache[packName];
+    const destinationPath = `${basePath}/${path}`;
     try {
         accessSync(destinationPath, fs.constants.F_OK);
         logger.info(`Send file ${destinationPath} to ${username}`);

@@ -1,10 +1,11 @@
 import {syncConfig} from "./config.mjs";
 import {logger} from "./logger.mjs";
 import {calculateFilesMd5, calculateMd5, stringMd5} from "./utils.mjs";
-import {checkFileExist} from "./fileOperation.mjs";
+import {checkDirExist, checkFileExist} from "./fileOperation.mjs";
 import {createRequire} from "module";
 import {writeFileSync} from "fs";
 import {join} from "path";
+import lodash from "lodash";
 
 const require = createRequire(import.meta.url);
 
@@ -62,11 +63,13 @@ export function checkSyncFile(remake = false) {
         }
         for (const datum of data) {
             const path = pack[datum]["serverPath"];
-            const temp = calculateFilesMd5(join(basePath, path));
+            const filePath = join(basePath, path);
+            if (!checkDirExist(filePath, true)) {
+                logger.error(`Path ${filePath} not exist, create dir.`);
+            }
+            const temp = calculateFilesMd5(filePath);
             for (const packElement of pack[datum]["delete"]) {
-                if (temp.hasOwnProperty(packElement)) {
-                    temp[packElement] = 'del';
-                }
+                temp[packElement] = 'del';
             }
             pack[datum]["files"] = temp;
         }
@@ -90,11 +93,11 @@ export function checkSyncFile(remake = false) {
 
 export function generateJsonToClient(pack) {
     let clientJson = {};
-    clientJson.data = pack.data;
+    clientJson.data = lodash.cloneDeep(pack.data);
     for (const datum of pack.data) {
-        clientJson[datum] = pack[datum];
+        clientJson[datum] = lodash.cloneDeep(pack[datum]);
         delete clientJson[datum]["delete"];
     }
-    clientJson.files = pack.files;
+    clientJson.files = lodash.cloneDeep(pack.files);
     return clientJson
 }
