@@ -7,7 +7,9 @@
       "mode": "push",
       "serverPath": "config",
       "files": null,
-      "delete": []
+      "delete": [
+        "config.json"
+      ]
     },
     "mods": {
       "mode": "mirror",

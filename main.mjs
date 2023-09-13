@@ -10,13 +10,15 @@ import express from 'express';
 import expressWs from 'express-ws';
 import https from 'https';
 import http from 'http';
-import {config, saveSyncConfig} from "./nodejs/config.mjs";
+import {config} from "./nodejs/config.mjs";
 import {router as api} from "./router/apiRouter.mjs";
 // 初始化express
 const app = express();
 
 connectDatabase();
-databaseInit().catch(err => {
+databaseInit().then(() => {
+    database.info("Connect to database successfully.");
+}).catch(err => {
     if (err) {
         database.error("Database Init Error!");
         error.error(err.message);
@@ -30,7 +32,6 @@ process.on('exit', (code) => {
     } else {
         logger.error(`About to exit with code: ${code}`);
     }
-    saveSyncConfig();
     log4js.shutdown();
 });
 

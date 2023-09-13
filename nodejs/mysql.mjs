@@ -15,7 +15,7 @@ export function connectDatabase() {
     databasePool.on("error", _ => {
         database.error(`Disconnect from the database ${config.database.host}.`);
         setTimeout(connectDatabase, 2000);
-    })
+    });
 }
 
 export function runSqlCommand(cmd, param) {
@@ -101,7 +101,8 @@ export function databaseInit() {
             if (err) {
                 reject(err)
             }
-        })
+        });
+        resolve();
     })
 }
 

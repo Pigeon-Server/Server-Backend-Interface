@@ -65,7 +65,7 @@ export function checkSyncFile(remake = false) {
             const temp = calculateFilesMd5(join(basePath, path));
             for (const packElement of pack[datum]["delete"]) {
                 if (temp.hasOwnProperty(packElement)) {
-                    temp[packElement] = 'del'
+                    temp[packElement] = 'del';
                 }
             }
             pack[datum]["files"] = temp;
@@ -93,6 +93,7 @@ export function generateJsonToClient(pack) {
     clientJson.data = pack.data;
     for (const datum of pack.data) {
         clientJson[datum] = pack[datum];
+        delete clientJson[datum]["delete"];
     }
     clientJson.files = pack.files;
     return clientJson
