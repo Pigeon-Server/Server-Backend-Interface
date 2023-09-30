@@ -1,7 +1,8 @@
 import {createPool} from 'mysql2';
-import {database} from './logger.mjs';
+import {database, error} from './logger.mjs';
 import {checkInput, getTime} from "./utils.mjs";
 import {config} from "./config.mjs";
+import process from "node:process";
 
 let databasePool = null;
 
@@ -16,6 +17,24 @@ export function connectDatabase() {
         database.error(`Disconnect from the database ${config.database.host}.`);
         setTimeout(connectDatabase, 2000);
     });
+    databasePool.getConnection((err, conn) => {
+        if (err) {
+            database.error("Database Init Error!");
+            error.error(err.message);
+            process.exit(-1);
+        }
+        database.info("Connect to database successfully.");
+        conn.query("SELECT VERSION() as version", (err, results) => {
+            if (err) {
+                error.error(err.message);
+                conn.release();
+                return;
+            }
+            database.debug(`Database Version: ${results[0].version}`);
+            conn.release();
+        })
+    });
+    databaseInit().catch(err => database.error(err.message));
 }
 
 export function runSqlCommand(cmd, param) {
@@ -153,7 +172,7 @@ export function updateTime(username, uuid, mac, pack = null) {
         } else {
             databasePool.query(`UPDATE \`${config.database.prefix}_user\`
                                 SET updateTime = ?,
-                                    lastPack = ?
+                                    lastPack   = ?
                                 WHERE username = ?
                                   AND uuid = ?
                                   AND mac = ?`,

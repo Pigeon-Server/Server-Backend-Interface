@@ -1,8 +1,8 @@
 import log4js from "log4js";
 import {enableHSTS} from './nodejs/utils.mjs';
-import {connectDatabase, databaseInit} from './nodejs/mysql.mjs';
+import {connectDatabase} from './nodejs/mysql.mjs';
 import process from 'node:process';
-import {connectionLogger, database, error, logger} from './nodejs/logger.mjs';
+import {connectionLogger, error, logger} from './nodejs/logger.mjs';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -16,15 +16,6 @@ import {router as api} from "./router/apiRouter.mjs";
 const app = express();
 
 connectDatabase();
-databaseInit().then(() => {
-    database.info("Connect to database successfully.");
-}).catch(err => {
-    if (err) {
-        database.error("Database Init Error!");
-        error.error(err.message);
-        process.exit(-1);
-    }
-});
 
 process.on('exit', (code) => {
     if (code === 0) {
@@ -47,6 +38,7 @@ process.on('unhandledRejection', (err, _) => {
     error.error(err.message);
 });
 
+app.set('trust proxy', true);
 app.use(connectionLogger);
 app.use((req, res, next) => {
     enableHSTS(res);
@@ -70,18 +62,10 @@ app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 
 app.use('/api', api);
-
-app.use(["/resource", "/api/resource"], express.static("/resource", {
-    dotfiles: 'ignore',
-    etag: true,
-    extensions: ['htm', 'html'],
-    index: false,
-    maxAge: '1d',
-    redirect: true,
-    setHeaders(res, _, __) {
-        res.set('x-timestamp', Date.now().toString())
-    }
-}));
+app.use('*', (req, res) => {
+    logger.info(`Redirect to ${config.homePage}`);
+    res.redirect(config.homePage);
+});
 
 app.use((err, req, res, _) => {
     error.error(`Server Error! ${err.message}`);

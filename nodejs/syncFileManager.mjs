@@ -28,13 +28,14 @@ if (md5 === undefined) {
         syncConfigCache.md5 = temp;
     }
     checkSyncFile();
+    logger.debug(`syncConfigCache.json check finish`);
 }
 
 export function saveSyncConfigCache() {
     writeFileSync('syncConfigCache.json', JSON.stringify(syncConfigCache, null, 2), {encoding: 'utf-8'});
 }
 
-export function checkSyncFile(remake = false) {
+export function checkSyncFile() {
     for (const packName in syncConfigCache) {
         if (syncConfigCache.publicKey.includes(packName)) continue;
         const pack = syncConfigCache[packName];

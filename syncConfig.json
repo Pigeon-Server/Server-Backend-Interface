@@ -1,5 +1,5 @@
 {
-  "test": {
+  "[Pigeon Server]FTB-Interactions": {
     "init": false,
     "data": [],
     "basePath": "source/test",

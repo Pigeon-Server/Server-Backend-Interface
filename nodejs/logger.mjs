@@ -2,9 +2,7 @@ import log4js from "log4js";
 import {config} from "./config.mjs";
 
 const optional = {
-    compress: config.logConfig.enableCompress,
-    maxLogSize: config.logConfig.logSize,
-    backups: config.logConfig.backupNumber,
+    ...config.logConfig,
     alwaysIncludePattern: true
 };
 
@@ -35,7 +33,7 @@ log4js.configure(
                 ...optional,
                 layout: {
                     type: "pattern",
-                    pattern: "%[[%d] [%p] [%c|%z] [%f{1}|%l:%o] -%] %m"
+                    pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
                 }
             },
             error: {
@@ -45,7 +43,7 @@ log4js.configure(
                 ...optional,
                 layout: {
                     type: "pattern",
-                    pattern: "%[[%d] [%p] [%c|%z] [%f{1}|%l:%o] -%] %m"
+                    pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
                 }
             },
             database: {
@@ -55,7 +53,7 @@ log4js.configure(
                 ...optional,
                 layout: {
                     type: "pattern",
-                    pattern: "%[[%d] [%p] [%c|%z] [%f{1}|%l:%o] -%] %m"
+                    pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
                 }
             },
             api: {
@@ -65,7 +63,7 @@ log4js.configure(
                 ...optional,
                 layout: {
                     type: "pattern",
-                    pattern: "%[[%d] [%p] [%c|%z] [%f{1}|%l:%o] -%] %m"
+                    pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
                 }
             }
         },
@@ -118,4 +116,3 @@ export const connectionLogger = log4js.connectLogger(log4js.getLogger('connectio
             {from: 500, to: 599, level: "error"}
         ]
     });
-
