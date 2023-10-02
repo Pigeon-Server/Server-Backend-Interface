@@ -328,3 +328,19 @@ export function getPlayDay(info) {
             (err, res) => err ? reject(err) : resolve(res))
     })
 }
+
+export function getPlayDay(username, uuid, packName) {
+    return new Promise((resolve, reject) => {
+        if (checkInput([username, uuid, packName])) {
+            reject(new Error("Illegal Input"));
+            return
+        }
+        databasePool.query(`SELECT COUNT(DISTINCT DATE (createTime)) AS playDays
+                            FROM \`${config.database.prefix}_key\`
+                            WHERE username = ?
+                              AND uuid = ?
+                              AND packName = ?;`,
+            [username, uuid, packName],
+            (err, res) => err ? reject(err) : resolve(res))
+    })
+}

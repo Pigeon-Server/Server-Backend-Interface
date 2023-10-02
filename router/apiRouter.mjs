@@ -34,6 +34,7 @@ router.get("/update_link", (req, res) => {
 
 router.use(async (req, res, next) => {
     const {macAddress, uuid, username, packName} = req.query;
+    api.info(`New access from ${req.ip}`);
     api.info(`Argument mac: ${macAddress}, uuid: ${uuid}, username: ${username}, packName: ${packName}`);
     // 验证参数
     if ([macAddress, uuid, username].includes(undefined)) {
@@ -62,6 +63,11 @@ router.use(async (req, res, next) => {
         updateTime({username, uuid, macAddress, ip: req.ip, packName}).catch(err => error.error(err.message));
     } else {
         await addUserAccount({username, uuid, macAddress, ip: req.ip, packName}).catch(err => error.error(err.message));
+    }
+    if (packName === undefined) {
+        logger.warn(`Access Denial: No packName`);
+        res.status(439).json({status: false, msg: "未指定包名"});
+        return;
     }
     if (packName === undefined) {
         logger.warn(`Access Denial: No packName`);

@@ -13,7 +13,6 @@ temp.defaults.baseURL = "https://skin.pigeon-server.cn";
 
 const userExist = new Map();
 const uuidCache = new Map();
-
 setInterval(() => {
     userExist.clear();
     uuidCache.clear();
