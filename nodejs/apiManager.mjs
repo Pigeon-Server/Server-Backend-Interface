@@ -5,8 +5,10 @@ import {config} from "./config.mjs";
 temp.defaults.baseURL = "https://skin.pigeon-server.cn";
 
 const userExist = new Map();
+const uuidCache = new Map();
 setInterval(() => {
     userExist.clear();
+    uuidCache.clear();
     logger.debug("Clear Api Cache.");
 }, 3600000);
 
@@ -24,8 +26,10 @@ export async function getPlayerStatus(username, uuid, res) {
                 res.status(436).json({status: false, msg: `账号${username}已被封禁`});
                 return false;
             case 4:
-                res.status(437).json({status: false, msg: `UUID验证失败`});
-                return false;
+                if (uuidCache.has(username) && uuidCache.get(username) === uuid) {
+                    res.status(437).json({status: false, msg: `UUID验证失败`});
+                    return false;
+                }
         }
     }
     const response = await axios.get(`/api/ps-api/player/status/${username}`, {
@@ -34,6 +38,7 @@ export async function getPlayerStatus(username, uuid, res) {
         }
     });
     const {status, userstatus, playeruuid} = response.data;
+    uuidCache.set(username, uuid);
     if (status !== "1") {
         res.status(435).json({status: false, msg: `账号${username}不存在`});
         userExist.set(username, 2);

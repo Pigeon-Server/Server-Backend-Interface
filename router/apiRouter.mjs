@@ -1,6 +1,6 @@
 import express from "express";
 import expressWS from 'express-ws';
-import {error, logger} from "../nodejs/logger.mjs";
+import {api, error, logger} from "../nodejs/logger.mjs";
 import fs, {accessSync} from "fs";
 import {Tracker} from '../nodejs/IPTracker.mjs';
 import {config} from "../nodejs/config.mjs";
@@ -15,6 +15,8 @@ const tracker = new Tracker(config.callLimit.count, config.callLimit.time);
 
 router.use(async (req, res, next) => {
     const {macAddress, uuid, username, packName} = req.query;
+    api.info(`New access from ${req.ip}`);
+    api.info(`Argument mac: ${macAddress}, uuid: ${uuid}, username: ${username}, packName: ${packName}`);
     // 验证参数
     if ([macAddress, uuid, username].includes(undefined)) {
         logger.warn(`Access Denial: Missing parameter`);
@@ -39,23 +41,28 @@ router.use(async (req, res, next) => {
         return;
     }
     if (result.length === 1) {
-        updateTime(username, uuid, macAddress, packName).catch(err => error.error(err.message));
+        updateTime(username, uuid, macAddress, req.ip, packName).catch(err => error.error(err.message));
     } else {
         await addUserAccount(username, uuid, macAddress, req.ip, packName).catch(err => error.error(err.message));
+    }
+    if (packName === undefined) {
+        logger.warn(`Access Denial: No packName`);
+        res.status(439).json({status: false, msg: "未指定包名"});
+        return;
     }
     next();
 });
 
 router.get("/get-access-key", async (req, res) => {
-    const {macAddress, username, uuid} = req.query;
-    const result = await getKey(username, uuid, macAddress);
+    const {macAddress, username, uuid, packName} = req.query;
+    const result = await getKey(username, uuid, macAddress, packName);
     if (result.length === 1) {
         logger.info(`Send key ${result[0].accessKey} for ${username}.`);
         res.status(200).json({status: true, key: result[0].accessKey});
         return;
     }
     const key = generateKey();
-    setKey(username, uuid, macAddress, req.ip, key).then((_) => {
+    setKey(username, uuid, macAddress, req.ip, key, packName).then((_) => {
         logger.info(`Generate new key ${key} for ${username}.`);
         res.status(200).json({status: true, key});
     }).catch(err => {
@@ -66,20 +73,16 @@ router.get("/get-access-key", async (req, res) => {
 
 router.use(async (req, res, next) => {
     const {uuid, username, accessKey, packName, macAddress} = req.query;
+    api.info(`Argument accessKey: ${accessKey}`);
     if (accessKey === undefined) {
         logger.warn(`Access Denial: No accessKey`);
         res.status(403).json({status: false, msg: "无accessKey"});
         return;
     }
-    const response = await getKey(username, uuid, macAddress);
+    const response = await getKey(username, uuid, macAddress, packName);
     if (response.length === 0 || response[0].accessKey !== accessKey) {
         logger.warn(`Access Denial: Invalid accessKey ${accessKey}`);
         res.status(438).json({status: false, msg: "accessKey无效"});
-        return;
-    }
-    if (packName === undefined) {
-        logger.warn(`Access Denial: No packName`);
-        res.status(439).json({status: false, msg: "未指定包名"});
         return;
     }
     if (syncConfigCache[packName] === undefined) {
