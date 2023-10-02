@@ -1,12 +1,12 @@
 {
   "[Pigeon Server]FTB-Interactions": {
-    "init": false,
-    "data": [],
     "basePath": "source/test",
     "config": {
       "mode": "push",
       "serverPath": "config",
-      "files": null,
+      "ignore": [
+        "chapters"
+      ],
       "delete": [
         "config.json"
       ]
@@ -14,12 +14,12 @@
     "mods": {
       "mode": "mirror",
       "serverPath": "mods",
-      "files": null,
-      "delete": []
+      "ignore": [
+        "1.16.5"
+      ]
     },
     "files": {
-      "servers.dat": null,
-      "xray.zip": "del"
+      "servers.dat": null
     }
   },
   "publicKey": [
@@ -29,5 +29,8 @@
     "basePath",
     "md5",
     "publicKey"
-  ]
+  ],
+  "md5": {
+    "[Pigeon Server]FTB-Interactions": "a6c9b964bf9ba71f3fd1128507893a04"
+  }
 }

@@ -1,3 +1,10 @@
+/**
+ * @file 日志记录相关
+ * @module logger
+ * @author Half_nothing
+ * @version 0.2.3
+ * @since 0.2.0
+ */
 import log4js from "log4js";
 import {config} from "./config.mjs";
 

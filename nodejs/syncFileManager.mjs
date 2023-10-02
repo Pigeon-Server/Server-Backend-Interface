@@ -1,6 +1,13 @@
+/**
+ * @file 同步配置文件相关操作
+ * @module syncFileManager
+ * @author Half_nothing
+ * @version 0.2.4
+ * @since 0.2.0
+ */
 import {syncConfig} from "./config.mjs";
 import {logger} from "./logger.mjs";
-import {calculateFilesMd5, calculateMd5, stringMd5} from "./utils.mjs";
+import {calculateFilesMd5, encryptFile, encryptMD5} from "./utils.mjs";
 import {checkDirExist, checkFileExist} from "./fileOperation.mjs";
 import {createRequire} from "module";
 import {writeFileSync} from "fs";
@@ -10,37 +17,67 @@ import lodash from "lodash";
 const require = createRequire(import.meta.url);
 
 checkFileExist('syncConfigCache.json', true, JSON.stringify(syncConfig, null, 2));
-export let syncConfigCache = require('../syncConfigCache.json');
-const {md5} = syncConfigCache;
-if (md5 === undefined) {
-    logger.debug(`New Cache File Create, Generate Md5`);
-    syncConfigCache.md5 = calculateMd5('syncConfig.json');
-    checkSyncFile();
-} else {
-    const temp = calculateMd5('syncConfig.json');
-    if (md5 === temp) {
-        logger.debug(`syncConfig.json has not been updated, check cache file`);
-    } else {
-        logger.debug(`syncConfig.json has been updated, remake cache`);
-        writeFileSync('syncConfigCache.json', JSON.stringify(syncConfig, null, 2), {encoding: "utf-8"});
-        delete require.cache[require.resolve('../syncConfigCache.json')];
-        syncConfigCache = require('../syncConfigCache.json');
-        syncConfigCache.md5 = temp;
-    }
-    checkSyncFile();
-    logger.debug(`syncConfigCache.json check finish`);
+export const syncConfigCache = require('../syncConfigCache.json');
+
+checkSyncFileUpdate();
+checkSyncFile();
+
+logger.debug(`syncConfigCache.json check finish`);
+
+function saveSyncConfig() {
+    writeFileSync('syncConfig.json', JSON.stringify(syncConfig, null, 2), {encoding: 'utf-8'});
 }
 
-export function saveSyncConfigCache() {
+function saveSyncConfigCache() {
     writeFileSync('syncConfigCache.json', JSON.stringify(syncConfigCache, null, 2), {encoding: 'utf-8'});
 }
 
-export function checkSyncFile() {
+function checkSyncFileUpdate() {
+    if (syncConfig.md5 === undefined) {
+        syncConfig.md5 = {}
+    }
+    let needSave = false;
+    for (const packName in syncConfig) {
+        if (syncConfig.publicKey.includes(packName)) continue;
+        logger.debug(`Calculate pack config ${packName}.`);
+        const md5 = encryptMD5(JSON.stringify(syncConfig[packName]));
+        if (syncConfig.md5[packName] === md5) {
+            logger.debug(`${packName} has no change.`);
+            continue;
+        }
+        logger.debug(`${packName} has been changed, new md5: ${md5}.`);
+        syncConfig.md5[packName] = md5;
+        needSave = true;
+    }
+    if (needSave) {
+        saveSyncConfig();
+    }
+}
+
+function checkSyncFile() {
+    if (syncConfigCache.md5 === undefined) {
+        syncConfigCache.md5 = {}
+    }
     for (const packName in syncConfigCache) {
         if (syncConfigCache.publicKey.includes(packName)) continue;
+        if (syncConfig[packName] === undefined) {
+            delete syncConfigCache[packName];
+            logger.debug(`Pack config ${packName} don't exist, delete config cache`);
+            continue;
+        }
+        if (syncConfig.md5[packName] !== syncConfigCache.md5[packName]) {
+            logger.debug(`Pack config ${packName} has been updated, remake config cache`);
+            syncConfigCache[packName] = lodash.cloneDeep(syncConfig[packName]);
+            syncConfigCache.md5[packName] = syncConfig.md5[packName];
+        }
         const pack = syncConfigCache[packName];
-        if (pack.init) continue;
-        logger.debug(`Package ${packName} has not been init.`);
+        if (pack.init) {
+            logger.debug(`Pack ${packName} check finish`);
+            continue;
+        }
+        if (pack.data === undefined) {
+            pack.data = [];
+        }
         const basePath = pack["basePath"];
         if (basePath === undefined) {
             logger.error(`Unable to find pack ${packName}'s path.`);
@@ -48,11 +85,6 @@ export function checkSyncFile() {
         }
         logger.debug(`Package ${packName} now in process.`);
         logger.debug(`Package ${packName}'s path is ${basePath}.`);
-        const {init, data} = pack;
-        if (init === undefined) {
-            logger.error(`Fail to load pack ${packName}`);
-            continue;
-        }
         for (const packKey in pack) {
             if (syncConfigCache.publicKey.includes(packKey)) {
                 continue;
@@ -62,20 +94,22 @@ export function checkSyncFile() {
             }
             pack.data.push(packKey);
         }
-        for (const datum of data) {
+        for (const datum of pack.data) {
             const path = pack[datum]["serverPath"];
             const filePath = join(basePath, path);
             if (!checkDirExist(filePath, true)) {
                 logger.error(`Path ${filePath} not exist, create dir.`);
             }
-            const temp = calculateFilesMd5(filePath);
-            for (const packElement of pack[datum]["delete"]) {
-                temp[packElement] = 'del';
+            const temp = calculateFilesMd5(filePath, pack[datum].ignore);
+            if (pack[datum].delete !== undefined) {
+                for (const packElement of pack[datum].delete) {
+                    temp[packElement] = 'del';
+                }
             }
-            pack[datum]["files"] = temp;
+            pack[datum].files = temp;
         }
-        for (const packKey in pack["files"]) {
-            if (pack["files"][packKey] === 'del') {
+        for (const packKey in pack.files) {
+            if (pack.files[packKey] === 'del') {
                 continue;
             }
             const path = join(basePath, packKey);
@@ -83,10 +117,10 @@ export function checkSyncFile() {
                 logger.error(`File ${path} not found`);
                 continue;
             }
-            pack["files"][packKey] = calculateMd5(path);
+            pack.files[packKey] = encryptFile(path, encryptMD5);
         }
         const clientJson = generateJsonToClient(pack);
-        pack.md5 = stringMd5(JSON.stringify(clientJson));
+        pack.md5 = encryptMD5(JSON.stringify(clientJson));
         pack.init = true;
     }
     saveSyncConfigCache();
@@ -97,7 +131,8 @@ export function generateJsonToClient(pack) {
     clientJson.data = lodash.cloneDeep(pack.data);
     for (const datum of pack.data) {
         clientJson[datum] = lodash.cloneDeep(pack[datum]);
-        delete clientJson[datum]["delete"];
+        delete clientJson[datum].delete;
+        delete clientJson[datum].ignore;
     }
     clientJson.files = lodash.cloneDeep(pack.files);
     return clientJson

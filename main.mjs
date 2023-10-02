@@ -62,6 +62,7 @@ app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 
 app.use('/api', api);
+
 app.use('*', (req, res) => {
     logger.info(`Redirect to ${config.homePage}`);
     res.redirect(config.homePage);
