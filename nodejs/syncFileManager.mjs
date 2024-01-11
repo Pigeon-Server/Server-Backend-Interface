@@ -41,6 +41,13 @@ function checkSyncFileUpdate() {
         if (syncConfig.publicKey.includes(packName)) continue;
         logger.debug(`Calculate pack config ${packName}.`);
         const md5 = encryptMD5(JSON.stringify(syncConfig[packName]));
+        if (!(packName in syncConfigCache)) {
+            syncConfigCache[packName] = lodash.cloneDeep(syncConfig[packName]);
+            logger.debug(`New package ${packName} has been added, md5: ${md5}.`);
+            syncConfig.md5[packName] = md5;
+            needSave = true;
+            continue;
+        }
         if (syncConfig.md5[packName] === md5) {
             logger.debug(`${packName} has no change.`);
             continue;

@@ -88,7 +88,7 @@ export function databaseInit() {
                 "`uuid` char(32) NOT NULL," +
                 "`mac` char(20) NOT NULL," +
                 "`ip` char(40) NOT NULL," +
-                "`pack` varchar(40) NOT NULL," +
+                "`pack` varchar(64) NOT NULL," +
                 "`source` varchar(128) NOT NULL," +
                 "`time` datetime NOT NULL," +
                 "PRIMARY KEY (`id`)," +
@@ -104,7 +104,7 @@ export function databaseInit() {
                 "`uuid` char(32) NOT NULL," +
                 "`mac` char(20) NOT NULL," +
                 "`ip` char(40) NOT NULL," +
-                "`pack` varchar(40) NOT NULL," +
+                "`pack` varchar(64) NOT NULL," +
                 "`accessKey` char(32) NOT NULL," +
                 "`enable` tinyint(1) NOT NULL," +
                 "`createTime` datetime NOT NULL," +
@@ -325,22 +325,6 @@ export function getPlayDay(info) {
                               AND uuid = ?
                               AND packName = ?;`,
             [info.username, info.uuid, info.packName],
-            (err, res) => err ? reject(err) : resolve(res))
-    })
-}
-
-export function getPlayDay(username, uuid, packName) {
-    return new Promise((resolve, reject) => {
-        if (checkInput([username, uuid, packName])) {
-            reject(new Error("Illegal Input"));
-            return
-        }
-        databasePool.query(`SELECT COUNT(DISTINCT DATE (createTime)) AS playDays
-                            FROM \`${config.database.prefix}_key\`
-                            WHERE username = ?
-                              AND uuid = ?
-                              AND packName = ?;`,
-            [username, uuid, packName],
             (err, res) => err ? reject(err) : resolve(res))
     })
 }

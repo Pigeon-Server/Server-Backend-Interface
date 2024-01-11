@@ -14,18 +14,25 @@ expressWS(router);
 const tracker = new Tracker(config.callLimit.count, config.callLimit.time);
 
 router.use((req, res, next) => {
+    const {macAddress} = req.query;
     api.info(`New access from ${req.ip}`);
+    // api访问限制
+    if (!tracker.trackIP(req.ip, macAddress)) {
+        logger.warn(`Access Denial: Api call limit`);
+        res.status(429).json({status: false, msg: "超出API访问限制"});
+        return;
+    }
     next();
 });
 
 router.get("/get_jar", (req, res) => {
-    res.download("resource/HMCL.jar");
+    res.download(config.launchUpdate.jarPath);
 });
 
 router.get("/update_link", (req, res) => {
     const jarConfig = {
         "jar": config.launchUpdate.baseUrl + "/api/get_jar",
-        "jarsha1": encryptFile("resource/HMCL.jar", encryptSHA1),
+        "jarsha1": encryptFile(config.launchUpdate.jarPath, encryptSHA1),
         "changeLog": config.launchUpdate.changeLog,
         "version": config.launchUpdate.version
     };
@@ -40,12 +47,6 @@ router.use(async (req, res, next) => {
     if ([macAddress, uuid, username].includes(undefined)) {
         logger.warn(`Access Denial: Missing parameter`);
         res.status(401).json({status: false, msg: "无身份标识,拒绝访问"});
-        return;
-    }
-    // api访问限制
-    if (!tracker.trackIP(req.ip, macAddress)) {
-        logger.warn(`Access Denial: Api call limit`);
-        res.status(429).json({status: false, msg: "超出API访问限制"});
         return;
     }
     // 验证账号
@@ -63,11 +64,6 @@ router.use(async (req, res, next) => {
         updateTime({username, uuid, macAddress, ip: req.ip, packName}).catch(err => error.error(err.message));
     } else {
         await addUserAccount({username, uuid, macAddress, ip: req.ip, packName}).catch(err => error.error(err.message));
-    }
-    if (packName === undefined) {
-        logger.warn(`Access Denial: No packName`);
-        res.status(439).json({status: false, msg: "未指定包名"});
-        return;
     }
     if (packName === undefined) {
         logger.warn(`Access Denial: No packName`);
