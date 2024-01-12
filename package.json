@@ -1,6 +1,6 @@
 {
   "name": "server-backend-interface",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Pigeon Server Backend",
   "main": "main.mjs",
   "scripts": {
