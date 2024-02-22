@@ -1,10 +1,11 @@
 {
   "name": "server-backend-interface",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Pigeon Server Backend",
   "main": "main.mjs",
   "scripts": {
-    "run": "node main.mjs"
+    "run": "node main.mjs",
+    "update": "git reset --hard && git pull && npm run run"
   },
   "repository": {
     "type": "git",

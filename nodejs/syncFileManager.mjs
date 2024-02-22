@@ -126,6 +126,9 @@ function checkSyncFile() {
             }
             pack.files[packKey] = encryptFile(path, encryptMD5);
         }
+		if (pack.files === undefined) {
+			pack.files = {};
+		}
         const clientJson = generateJsonToClient(pack);
         pack.md5 = encryptMD5(JSON.stringify(clientJson));
         pack.init = true;
