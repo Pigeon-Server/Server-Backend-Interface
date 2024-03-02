@@ -2,8 +2,7 @@
  * @file 数据库相关函数
  * @module mysql
  * @author Half_nothing
- * @version 0.2.4
- * @since 0.2.0
+ * @since 1.0.0
  */
 import {createPool} from 'mysql2';
 import {database, error} from './logger.mjs';
@@ -19,8 +18,8 @@ let databasePool = null;
  * @description 连接数据库
  * @returns {void}
  * @author Half_nothing
- * @version 0.2.3
- * @since 0.2.0
+ * @version 1.0.3
+ * @since 1.0.0
  * @export
  */
 export function connectDatabase() {
@@ -60,8 +59,8 @@ export function connectDatabase() {
  * @description 初始化数据库
  * @returns {Promise<void>}
  * @author Half_nothing
- * @version 0.2.1
- * @since 0.2.0
+ * @version 1.2.1
+ * @since 1.0.0
  * @export
  */
 export function databaseInit() {
@@ -137,8 +136,8 @@ export function databaseInit() {
  * @param info {{username: string, uuid: string, macAddress: string, ip: string, packName: string}}
  * @returns {Promise<void>}
  * @author Half_nothing
- * @version 0.2.3
- * @since 0.2.0
+ * @version 1.0.3
+ * @since 1.0.0
  * @export
  */
 export function addUserAccount(info) {
@@ -162,8 +161,8 @@ export function addUserAccount(info) {
  * @param info {{username: string, uuid: string, macAddress: string}}
  * @returns {Promise<Array<{username: string}>>}
  * @author Half_nothing
- * @version 0.2.3
- * @since 0.2.0
+ * @version 1.0.3
+ * @since 1.0.0
  * @export
  */
 export function checkUserAccount(info) {
@@ -189,8 +188,8 @@ export function checkUserAccount(info) {
  * @param info {{username: string, uuid: string, macAddress: string, ip: string, packName: string}}
  * @returns {Promise<void>}
  * @author Half_nothing
- * @version 0.2.4
- * @since 0.2.0
+ * @version 1.0.4
+ * @since 1.0.0
  * @export
  */
 export function updateTime(info) {
@@ -229,8 +228,8 @@ export function updateTime(info) {
  * @param info {{username: string, uuid: string, macAddress: string, packName: string}}
  * @returns {Promise<Array<{username: string, uuid: string, accessKey: string}>>}
  * @author Half_nothing
- * @version 0.2.4
- * @since 0.2.0
+ * @version 1.0.4
+ * @since 1.0.0
  * @export
  */
 export function getKey(info) {
@@ -258,8 +257,8 @@ export function getKey(info) {
  * @param info {{username: string, uuid: string, macAddress: string, ip: string, key: string, packName: string}}
  * @returns {Promise<void>}
  * @author Half_nothing
- * @version 0.2.4
- * @since 0.2.0
+ * @version 1.0.4
+ * @since 1.0.0
  * @export
  */
 export function setKey(info) {
@@ -284,8 +283,8 @@ export function setKey(info) {
  * @param info {{username: string, uuid: string, macAddress: string, ip: string, packName: string, path: string}}
  * @returns {Promise<void>}
  * @author Half_nothing
- * @version 0.2.3
- * @since 0.2.0
+ * @version 1.0.4
+ * @since 1.0.0
  * @export
  */
 export function addUserAccess(info) {
@@ -309,8 +308,8 @@ export function addUserAccess(info) {
  * @param info {{username: string, uuid: string, packName: string}}
  * @returns {Promise<Array<{playDays: number}>>}
  * @author Half_nothing
- * @version 0.2.4
- * @since 0.2.4
+ * @version 1.0.4
+ * @since 1.1.4
  * @export
  */
 export function getPlayDay(info) {

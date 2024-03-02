@@ -2,8 +2,8 @@
  * @file 同步配置文件相关操作
  * @module syncFileManager
  * @author Half_nothing
- * @version 0.2.4
- * @since 0.2.0
+ * @version 1.2.6
+ * @since 1.0.0
  */
 import {syncConfig} from "./config.mjs";
 import {logger} from "./logger.mjs";

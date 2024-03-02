@@ -2,8 +2,7 @@
  * @file 文件目录相关操作
  * @module fileOperation
  * @author Half_nothing
- * @version 0.2.1
- * @since 0.2.0
+ * @since 1.0.0
  */
 import {accessSync, constants, writeFileSync, mkdirSync} from "fs";
 
@@ -13,10 +12,11 @@ import {accessSync, constants, writeFileSync, mkdirSync} from "fs";
  * @description 检查一个目录是否存在<br/>如果存在则返回true<br/>如果不存在则返回false<br/>如果不存在且createFile为true<br/>则创建该目录
  * @param path {string} 要检查的目录
  * @param createDir {boolean} 如若目录不存在是否创建目录
- * @returns {boolean} true: 存在 false: 不存在
+ * @return {boolean} true 存在
+ * @return {boolean} false 不存在
  * @author Half_nothing
- * @version 0.2.0
- * @since 0.2.0
+ * @version 1.0.0
+ * @since 1.0.0
  * @export
  */
 export function checkDirExist(path, createDir = false) {
@@ -39,10 +39,11 @@ export function checkDirExist(path, createDir = false) {
  * @param createFile {boolean} 如若文件不存在是否创建文件
  * @param data {string} 要写入文件的内容,默认为空文件
  * @param options {{}} 写入文件时的选项,默认为{encoding: 'utf-8'}
- * @returns {boolean} true: 存在 false: 不存在
+ * @return {boolean} true 存在
+ * @return {boolean} false 不存在
  * @author Half_nothing
- * @version 0.2.0
- * @since 0.2.0
+ * @version 1.0.0
+ * @since 1.0.0
  * @export
  */
 export function checkFileExist(path, createFile = false, data = "", options = {encoding: 'utf-8'}) {

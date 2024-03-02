@@ -140,3 +140,4 @@ config.json
 /Server-Backend-Interface.7z
 /syncConfigCache.json
 /resource/HMCL.jar
+/ClearApiCache.http

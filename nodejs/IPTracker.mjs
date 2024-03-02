@@ -2,8 +2,7 @@
  * @file API访问限制器
  * @module IPTracker
  * @author Half_nothing
- * @version 0.2.0
- * @since 0.2.0
+ * @since 1.0.0
  */
 
 /**
@@ -11,8 +10,8 @@
  * @name Tracker
  * @description API访问限制器类
  * @author Half_nothing
- * @version 0.2.0
- * @since 0.2.0
+ * @version 1.0.1
+ * @since 1.0.0
  * @export
  */
 export class Tracker {
@@ -24,8 +23,8 @@ export class Tracker {
      * @param limit {number} API访问限制
      * @param windowSize {number} 滑动窗口大小
      * @author Half_nothing
-     * @version 0.2.0
-     * @since 0.2.0
+     * @version 1.0.1
+     * @since 1.0.0
      * @export
      */
     constructor(limit, windowSize) {
@@ -42,10 +41,11 @@ export class Tracker {
      * @description 检查ip和mac是否超出访问限制
      * @param ip {string} 客户端ip
      * @param mac {string} 客户端mac地址
-     * @returns {boolean} true: 没有超出限制 false: 超出访问限制
+     * @return {boolean} true 没有超出限制
+     * @return {boolean} false 超出访问限制
      * @author Half_nothing
-     * @version 0.2.0
-     * @since 0.2.0
+     * @version 1.0.1
+     * @since 1.0.0
      * @export
      */
     trackIP(ip, mac) {

@@ -2,8 +2,7 @@
  * @file 配置文件相关操作
  * @module config
  * @author Half_nothing
- * @version 0.2.0
- * @since 0.2.0
+ * @since 1.0.0
  */
 import {createRequire} from 'module';
 import {checkFileExist} from "./fileOperation.mjs";

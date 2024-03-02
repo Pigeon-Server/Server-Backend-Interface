@@ -2,8 +2,8 @@
  * @file 工具
  * @module utils
  * @author Half_nothing
- * @version 0.2.4
- * @since 0.2.0
+ * @version 1.0.4
+ * @since 1.0.0
  */
 import {config} from "./config.mjs";
 import {readFileSync, readdirSync, statSync} from 'fs';
