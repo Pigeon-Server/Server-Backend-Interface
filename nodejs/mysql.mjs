@@ -76,7 +76,7 @@ export function databaseInit() {
             "`updateTime` datetime Not NULL," +
             "PRIMARY KEY (`id`, `username`, `uuid`)," +
             "UNIQUE INDEX `id`(`id`)," +
-            "INDEX `info`(`username`, `uuid`, `mac`));", (err, _) => {
+            "UNIQUE INDEX `info`(`username`, `uuid`, `mac`));", (err, _) => {
             if (err) {
                 database.error("Database Create Error!");
                 process.exit(-1);
@@ -92,7 +92,7 @@ export function databaseInit() {
                 "`time` datetime NOT NULL," +
                 "PRIMARY KEY (`id`)," +
                 "UNIQUE INDEX `id`(`id`)," +
-                "INDEX `info`(`username`, `uuid`, `mac`)," +
+                "UNIQUE INDEX `info`(`username`, `uuid`, `mac`)," +
                 "CONSTRAINT `access` FOREIGN KEY (`username`, `uuid`, `mac`) " +
                 `REFERENCES \`${config.database.prefix}_user\` (\`username\`, \`uuid\`, \`mac\`)` +
                 "ON DELETE CASCADE " +
@@ -110,7 +110,7 @@ export function databaseInit() {
                 "`expirationTime` datetime NOT NULL," +
                 "PRIMARY KEY (`id`)," +
                 "UNIQUE INDEX `id`(`id`) USING BTREE," +
-                "INDEX `info`(`username`, `uuid`, `mac`) USING BTREE," +
+                "UNIQUE INDEX `info`(`username`, `uuid`, `mac`) USING BTREE," +
                 "CONSTRAINT `key` FOREIGN KEY (`username`, `uuid`, `mac`) " +
                 `REFERENCES \`${config.database.prefix}_user\` (\`username\`, \`uuid\`, \`mac\`) ` +
                 "ON DELETE CASCADE " +

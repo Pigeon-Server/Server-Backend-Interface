@@ -9,9 +9,9 @@ import {checkFileExist} from "./fileOperation.mjs";
 
 const require = createRequire(import.meta.url);
 
-checkFileExist('syncConfig.json', true, "{}");
+checkFileExist('SyncConfig.json', true, "{}");
 
-export const syncConfig = require('../syncConfig.json');
+export const syncConfig = require('../config/SyncConfig.json');
 
 export const config = require('../config.json');
 

@@ -1,10 +1,15 @@
-import {FileUtils} from "./utils/fileUtils";
+import {FileUtils} from "@/utils/fileUtils";
 import {logger} from "./logger";
 import {readFileSync, writeFileSync} from "fs";
 import checkDirExist = FileUtils.checkDirExist;
 import checkFileExist = FileUtils.checkFileExist;
 
-const configList = ["config.json"];
+const configList: string[] = [
+    "DatabaseConfig.json",
+    "ServerConfig.json",
+    "UpdateConfig.json",
+    "SyncConfig.json"
+];
 
 if (!checkDirExist("config", true)) {
     logger.error("Config dir not exist, create and exit");
@@ -24,8 +29,8 @@ function checkConfigFile(fileName: string): boolean {
             process.exit(-1);
         }
         writeFileSync(`config/${fileName}`,
-            readFileSync(`config/default/${fileName}`, {encoding: "utf-8"}),
-            {encoding: "utf-8"})
+            readFileSync(`config/default/${fileName}`, "utf8"),
+            "utf8");
         logger.info(`Copy ${fileName} successfully, please edit config file.`);
         return false;
     }
@@ -40,5 +45,8 @@ configList.forEach((value) => {
 });
 
 export namespace Config {
-    export const config = require("../config/config.json")
+    export const databaseConfig = require("@config/DatabaseConfig.json");
+    export const serverConfig = require("@config/ServerConfig.json");
+    export const syncConfig = require("@config/SyncConfig.json");
+    export const updateConfig = require("@config/UpdateConfig.json");
 }

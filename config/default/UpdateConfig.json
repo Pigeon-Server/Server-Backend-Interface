@@ -1,0 +1,16 @@
+{
+  "apikey": {
+    "timeout": 3600,
+    "key": "123456"
+  },
+  "updateMaxThread": 8,
+  "launchUpdate": {
+    "baseUrl": "http://127.0.0.1",
+    "version": "123",
+    "changeLog": "123",
+    "jarPath": "123"
+  },
+  "auth": {
+    "key": "123"
+  }
+}

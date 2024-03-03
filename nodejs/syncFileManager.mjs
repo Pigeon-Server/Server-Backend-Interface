@@ -25,7 +25,7 @@ checkSyncFile();
 logger.debug(`syncConfigCache.json check finish`);
 
 function saveSyncConfig() {
-    writeFileSync('syncConfig.json', JSON.stringify(syncConfig, null, 2), {encoding: 'utf-8'});
+    writeFileSync('SyncConfig.json', JSON.stringify(syncConfig, null, 2), {encoding: 'utf-8'});
 }
 
 function saveSyncConfigCache() {

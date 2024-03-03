@@ -1,4 +1,8 @@
-import {Config} from "./config";
-import config = Config.config;
+import path from "path";
+import alias from "module-alias";
 
-console.log(config)
+alias(path.resolve(__dirname, "../"));
+
+import {Database} from "@/base/mysql";
+
+Database.INSTANCE;

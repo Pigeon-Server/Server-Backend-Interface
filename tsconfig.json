@@ -12,7 +12,12 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "inlineSourceMap": true
+    "inlineSourceMap": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@config/*": ["../config/*"],
+      "@/*": ["*"]
+    }
   },
   "exclude": [
     "./node_modules",

@@ -1,0 +1,16 @@
+{
+  "[Pigeon Server]FTB-Interactions": {
+    "basePath": "source/test"
+  },
+  "publicKey": [
+    "init",
+    "data",
+    "files",
+    "basePath",
+    "md5",
+    "publicKey"
+  ],
+  "md5": {
+    "[Pigeon Server]FTB-Interactions": "a6c9b964bf9ba71f3fd1128507893a04"
+  }
+}
