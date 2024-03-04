@@ -38,15 +38,17 @@ function checkConfigFile(fileName: string): boolean {
     return true;
 }
 
+logger.debug("Checking config file");
 configList.forEach((value) => {
     if (!checkConfigFile(value)) {
         process.exit(-1);
     }
 });
+logger.debug("Config file check finish");
 
 export namespace Config {
-    export const databaseConfig = require("@config/DatabaseConfig.json");
-    export const serverConfig = require("@config/ServerConfig.json");
-    export const syncConfig = require("@config/SyncConfig.json");
-    export const updateConfig = require("@config/UpdateConfig.json");
+    export const databaseConfig: DatabaseConfig = require("@config/DatabaseConfig.json");
+    export const serverConfig: ServerConfig = require("@config/ServerConfig.json");
+    export const syncConfig: SyncConfig = require("@config/SyncConfig.json");
+    export const updateConfig: UpdateConfig = require("@config/UpdateConfig.json");
 }

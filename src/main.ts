@@ -3,6 +3,11 @@ import alias from "module-alias";
 
 alias(path.resolve(__dirname, "../"));
 
-import {Database} from "@/base/mysql";
+import {logger} from "@/base/logger";
 
-Database.INSTANCE;
+logger.debug("Initializing...");
+
+import {SyncFileManager} from "@/manager/syncFileManager";
+SyncFileManager.checkSyncCache();
+
+logger.debug("Initialization complete");

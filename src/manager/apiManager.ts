@@ -4,9 +4,9 @@
  * @author Half_nothing
  * @since 1.3.0
  * @date 2024.03.03
-**********************************************/
+ **********************************************/
 import temp from "axios";
-import type {AxiosStatic} from "axios";
+import type {AxiosStatic, AxiosRequestConfig} from "axios";
 import type {Response} from "express";
 import {logger} from "@/base/logger";
 import {Config} from "@/base/config";
@@ -16,14 +16,20 @@ temp.defaults.baseURL = "https://skin.pigeon-server.cn";
 
 const userExist = new Map();
 const uuidCache = new Map();
+const requestConfig: AxiosRequestConfig = {
+    headers: {
+        "api-key": updateConfig.apikey.key
+    }
+};
 
-/********************************************** * @function
+/**
+ * @function
  * @name clearApiCache
  * @desc 清空api缓存
  * @version 1.0.0
  * @since 1.3.0
  * @export
-**********************************************/
+ */
 export function clearApiCache() {
     userExist.clear();
     uuidCache.clear();
@@ -32,15 +38,17 @@ export function clearApiCache() {
 
 setInterval(clearApiCache, 3600000);
 
-/********************************************** * @field
+/**
+ * @field
  * @name axios
  * @desc axios实例
  * @type {AxiosStatic}
  * @export
-**********************************************/
+ */
 export const axios: AxiosStatic = temp;
 
-/********************************************** * @function
+/**
+ * @function
  * @name getPlayerStatus
  * @desc 检查给定用户名和uuid的账户是否合法
  * @param username {string} 用户名
@@ -52,7 +60,7 @@ export const axios: AxiosStatic = temp;
  * @version 1.0.0
  * @since 1.3.0
  * @export
-**********************************************/
+ */
 export async function getPlayerStatus(username: string, uuid: string, res: Response): Promise<boolean> {
     if (userExist.has(username)) {
         switch (userExist.get(username)) {
@@ -71,11 +79,7 @@ export async function getPlayerStatus(username: string, uuid: string, res: Respo
                 }
         }
     }
-    const response = await axios.get(`/api/ps-api/player/status/${username}`, {
-        headers: {
-            "api-key": updateConfig.apikey.key
-        }
-    });
+    const response = await axios.get(`/api/ps-api/player/status/${username}`, requestConfig);
     const {status, userstatus, playeruuid} = response.data;
     uuidCache.set(username, uuid);
     if (status !== "1") {

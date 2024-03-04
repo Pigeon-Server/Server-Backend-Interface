@@ -2,7 +2,7 @@
   "[Pigeon Server]FTB-Interactions": {
     "basePath": "source/test"
   },
-  "publicKey": [
+  "ignoredKey": [
     "init",
     "data",
     "files",

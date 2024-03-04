@@ -34,7 +34,6 @@ export class Database {
         this.connectDatabase();
     }
 
-
     /**
      * @function
      * @description 连接数据库
@@ -51,9 +50,9 @@ export class Database {
             queueLimit: 0
         }));
         this.databasePool.on("error", _ => {
-            logger.error(`Disconnect from the database ${databaseConfig.database.host}.`);
+            logger.error(`Disconnect from the database ${databaseConfig.config.host}.`);
             setTimeout(this.connectDatabase);
-            logger.debug(`Reconnect to database ${databaseConfig.database.host}.`);
+            logger.debug(`Reconnect to database ${databaseConfig.config.host}.`);
         });
         this.databasePool.getConnection((err, conn) => {
             if (err) {

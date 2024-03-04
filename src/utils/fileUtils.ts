@@ -9,16 +9,18 @@ import {accessSync, constants, writeFileSync, mkdirSync, readdirSync, statSync, 
 import {join, relative} from "path";
 import {EncryptUtils} from "./encryptUtils";
 
-/********************************************** * @namespace FileUtils
+/**
+ * @namespace FileUtils
  * @desc 文件系统操作类
  * @export
- **********************************************/
+ */
 export namespace FileUtils {
 
     import encryptFile = EncryptUtils.encryptFile;
     import encryptMD5 = EncryptUtils.encryptMD5;
 
-    /**********************************************     * @function
+    /**
+     * @function
      * @desc 检查一个目录是否存在
      * @desc 如果不存在且createFile为true则创建该目录
      * @param path {string} 要检查的目录
@@ -30,7 +32,7 @@ export namespace FileUtils {
      * @version 1.0.0
      * @since 1.3.0
      * @export
-     **********************************************/
+     */
     export function checkDirExist(path: string, createDir: boolean = false, callback?: Runnable<boolean>): void | boolean {
         try {
             accessSync(path, constants.F_OK);
@@ -43,22 +45,23 @@ export namespace FileUtils {
         }
     }
 
-    /**********************************************     * @function
+    /**
+     * @function
      * @desc 检查一个文件是否存在
      * @desc 如果不存在且createFile为true则创建该文件并写入内容data
      * @desc options为文件写入时候的选项
      * @param path {string} 要检查的文件路径
      * @param createFile {boolean} 如若文件不存在是否创建文件
      * @param data {string} 要写入文件的内容,默认为空文件
-     * @param options {{}} 写入文件时的选项,默认为{encoding: 'utf-8'}
+     * @param options {WriteFileOptions} 写入文件时的选项,默认为"utf-8"
      * @param callback {Runnable<boolean>} 回调函数
-     * @return {boolean} true 存在
-     * @return {boolean} false 不存在
+     * @return {true} 存在
+     * @return {false} 不存在
      * @return {void} 当传入回调函数时不返回值
      * @version 1.0.0
      * @since 1.3.0
      * @export
-     **********************************************/
+     */
     export function checkFileExist(path: string, createFile: boolean = false, data: string = "",
                                    options: WriteFileOptions = 'utf-8', callback?: Runnable<boolean>): void | boolean {
         try {
@@ -72,7 +75,17 @@ export namespace FileUtils {
         }
     }
 
-    export function listFiles(directory: string, ignoreList?: string[]) {
+    /**
+     * @function
+     * @desc 递归列出某个目录下面的所有文件
+     * @param directory 要列出文件的目录路径
+     * @param ignoreList 忽略的路径或者文件名列表
+     * @return {string[]} 存储所有文件路径的列表
+     * @version 1.0.0
+     * @since 1.3.0
+     * @export
+     */
+    export function listFiles(directory: string, ignoreList?: string[]): string[] {
         let filesArray: string[] = [];
         const files = readdirSync(directory);
         files.forEach(file => {
@@ -91,7 +104,17 @@ export namespace FileUtils {
         return filesArray;
     }
 
-    export function calculateFilesMd5(path: string, ignoreList: string[]): {} {
+    /**
+     * @function
+     * @desc 计算指定目录下所有文件的MD5值
+     * @param path 指定目录路径
+     * @param ignoreList 忽略的路径或者文件名列表
+     * @return 返回一个字典,键是文件路径,值是该文件的MD5值
+     * @version 1.0.0
+     * @since 1.3.0
+     * @export
+     */
+    export function calculateFilesMd5(path: string, ignoreList?: string[]): { [key: string]: string } {
         const files = listFiles(path, ignoreList);
         const content: { [key: string]: string } = {};
         for (const file of files) {
