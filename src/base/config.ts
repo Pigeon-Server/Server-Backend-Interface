@@ -39,11 +39,13 @@ function checkConfigFile(fileName: string): boolean {
 }
 
 logger.debug("Checking config file");
+let exit = false;
 configList.forEach((value) => {
     if (!checkConfigFile(value)) {
-        process.exit(-1);
+        exit = true;
     }
 });
+if (exit) process.exit(-1);
 logger.debug("Config file check finish");
 
 export namespace Config {
