@@ -8,7 +8,7 @@
     "files",
     "basePath",
     "md5",
-    "publicKey"
+    "ignoredKey"
   ],
   "md5": {
     "[Pigeon Server]FTB-Interactions": "a6c9b964bf9ba71f3fd1128507893a04"
