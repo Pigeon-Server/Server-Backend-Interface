@@ -111,7 +111,7 @@ export class Database {
                     "`time` datetime NOT NULL," +
                     "PRIMARY KEY (`id`)," +
                     "UNIQUE INDEX `id`(`id`)," +
-                    "UNIQUE INDEX `info`(`username`, `uuid`, `mac`)," +
+                    "INDEX `info`(`username`, `uuid`, `mac`)," +
                     "CONSTRAINT `access` FOREIGN KEY (`username`, `uuid`, `mac`) " +
                     `REFERENCES \`${databaseConfig.prefix}_user\` (\`username\`, \`uuid\`, \`mac\`)` +
                     "ON DELETE CASCADE " +
@@ -129,7 +129,7 @@ export class Database {
                     "`expirationTime` datetime NOT NULL," +
                     "PRIMARY KEY (`id`)," +
                     "UNIQUE INDEX `id`(`id`) USING BTREE," +
-                    "UNIQUE INDEX `info`(`username`, `uuid`, `mac`) USING BTREE," +
+                    "INDEX `info`(`username`, `uuid`, `mac`) USING BTREE," +
                     "CONSTRAINT `key` FOREIGN KEY (`username`, `uuid`, `mac`) " +
                     `REFERENCES \`${databaseConfig.prefix}_user\` (\`username\`, \`uuid\`, \`mac\`) ` +
                     "ON DELETE CASCADE " +

@@ -28,7 +28,7 @@ export namespace ApiHandler {
             res.status(400).json({status: false, msg: "未携带mac address信息"});
             return;
         }
-        api.info(`New access from ${req.ip}`);
+        api.debug(`New access from ${req.ip}`);
         // api访问限制
         if (!tracker.trackIP(req.ip!, <string>macAddress)) {
             api.warn(`Access Denial: Api call limit`);
@@ -69,7 +69,7 @@ export namespace ApiHandler {
             username,
             packName
         } = req.query;
-        api.info(`Argument mac: ${macAddress}, uuid: ${uuid}, username: ${username}, packName: ${packName}`);
+        api.debug(`Argument mac: ${macAddress}, uuid: ${uuid}, username: ${username}, packName: ${packName}`);
         // 验证参数
         if ([macAddress, uuid, username].includes(undefined)) {
             api.warn(`Access Denial: Missing parameter`);
@@ -164,7 +164,7 @@ export namespace ApiHandler {
             packName,
             macAddress
         } = req.query;
-        api.info(`Argument accessKey: ${accessKey}`);
+        api.debug(`Argument accessKey: ${accessKey}`);
         if (accessKey === undefined) {
             api.warn(`Access Denial: No accessKey`);
             res.status(403).json({status: false, msg: "无accessKey"});
@@ -220,7 +220,7 @@ export namespace ApiHandler {
             return;
         }
         if (localSource !== undefined && (<string>localSource).toLowerCase() === syncConfigCache[<string>packName].md5) {
-            api.debug(`Same MD5 ${localSource} with client, send nothing.`);
+            api.info(`Same MD5 ${localSource} with client, send nothing.`);
             res.status(304).send();
             return;
         }
