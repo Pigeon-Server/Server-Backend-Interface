@@ -7,7 +7,7 @@ git clone https://github.com/Pigeon-Server/Server-Backend-Interface.git
 ```
 2.安装依赖
 ```shell
-npm install --production
+npm install
 ```
 3.构建js文件
 ```shell
