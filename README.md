@@ -1,5 +1,23 @@
 # Server-Backend-Interface
 
+## 如何使用
+1.克隆本仓库到本地
+```shell
+git clone https://github.com/Pigeon-Server/Server-Backend-Interface.git
+```
+2.安装依赖
+```shell
+npm install --production
+```
+3.构建js文件
+```shell
+npm run build
+```
+4.启动服务器
+```shell
+npm run start
+```
+
 ## 同步配置说明
 
 配置示例
