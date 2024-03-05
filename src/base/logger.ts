@@ -36,6 +36,16 @@ log4js.configure(
                     type: "pattern",
                     pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
                 }
+            },
+            api: {
+                type: "dateFile",
+                filename: "logs/api",
+                pattern: "yyyy-MM-dd.log",
+                ...optional,
+                layout: {
+                    type: "pattern",
+                    pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
+                }
             }
         },
         categories: {
@@ -53,12 +63,18 @@ log4js.configure(
                 appenders: ['console', 'logger'],
                 enableCallStack: true,
                 level: 'debug'
+            },
+            api: {
+                appenders: ['console', 'api'],
+                enableCallStack: true,
+                level: 'debug'
             }
         }
     }
 );
 
 export const logger = log4js.getLogger('logger');
+export const api = log4js.getLogger('api');
 export const connectionLogger = log4js.connectLogger(log4js.getLogger('connection'),
     {
         level: 'auto',
