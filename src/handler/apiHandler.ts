@@ -23,11 +23,6 @@ export namespace ApiHandler {
 
     export const limitHandler = (req: Request, res: Response, next: NextFunction) => {
         const {macAddress} = req.query;
-        if (macAddress === undefined) {
-            api.error(`Access Denial: no mac address provided`);
-            res.status(400).json({status: false, msg: "未携带mac address信息"});
-            return;
-        }
         api.debug(`New access from ${req.ip}`);
         // api访问限制
         if (!tracker.trackIP(req.ip!, <string>macAddress)) {

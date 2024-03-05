@@ -11,7 +11,7 @@
  * @name Tracker
  * @description API访问限制器类
  * @author Half_nothing
- * @version 1.0.1
+ * @version 1.0.2
  * @since 1.0.0
  * @export
  */
@@ -43,15 +43,18 @@ export class Tracker {
      * @public
      * @desc 检查ip和mac是否超出访问限制
      * @param ip {string} 客户端ip
-     * @param mac {string} 客户端mac地址
+     * @param mac {string?} 客户端mac地址
      * @return {true} 没有超出限制
      * @return {false} 超出访问限制
-     * @version 1.0.0
+     * @version 1.0.1
      * @since 1.3.0
      * @export
      */
-    trackIP(ip: string, mac: string): boolean {
+    trackIP(ip: string, mac?: string): boolean {
         const now = Date.now();
+        if (mac === undefined || mac === null) {
+            return this._trackIP(now, ip);
+        }
         return this._trackIP(now, ip) && this._trackMac(now, mac);
     }
 
