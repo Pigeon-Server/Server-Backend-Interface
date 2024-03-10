@@ -9,7 +9,6 @@ import {Database} from "@/base/mysql";
 import express from "express";
 import {NextFunction, Response, Request} from "express";
 import process from "node:process";
-import log4js from "log4js";
 import fs from "fs";
 import https from "https";
 import http from "http";
@@ -20,31 +19,13 @@ import enableHSTS = Utils.enableHSTS;
 import {apiRouter} from "@/router/api";
 import {FileUtils} from "@/utils/fileUtils";
 import checkFileExist = FileUtils.checkFileExist;
+import {initCatcher} from "@/base/catcher";
 
+initCatcher();
 SyncFileManager.checkSyncCache();
 Database.INSTANCE;
 
 const app = express();
-process.on('exit', (code) => {
-    if (code === 0) {
-        logger.info(`About to exit with code: ${code}`);
-    } else {
-        logger.error(`About to exit with code: ${code}`);
-    }
-    log4js.shutdown();
-});
-
-process.on('SIGINT', () => {
-    process.exit(-1);
-});
-
-process.on('uncaughtException', (err: Error) => {
-    logger.error("UncaughtException: " + err.message);
-});
-
-process.on('unhandledRejection', (err: Error, _) => {
-    logger.error("UnhandledRejection: " + err.message);
-});
 
 app.set('trust proxy', true);
 app.use(connectionLogger);
@@ -60,7 +41,7 @@ app.use(express.json());
 
 app.use("/api", apiRouter);
 
-app.use('*', (req: Request, res: Response) => {
+app.use('*', (_: Request, res: Response) => {
     logger.info(`Not router match, redirect to home page ${serverConfig.homePage}`);
     res.redirect(serverConfig.homePage);
 });

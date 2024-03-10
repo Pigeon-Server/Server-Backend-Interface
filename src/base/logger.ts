@@ -2,11 +2,12 @@ import log4js from "log4js";
 
 const optional = {
     maxLogSize: "10M",
-    backups: 10,
+    numBackups: 10,
     compress: true,
     alwaysIncludePattern: true
 };
 
+console.debug("Logger initializing...");
 log4js.configure(
     {
         appenders: {
@@ -21,7 +22,6 @@ log4js.configure(
                 type: "dateFile",
                 filename: "logs/access",
                 pattern: "yyyy-MM-dd.log",
-                ...optional,
                 layout: {
                     type: "pattern",
                     pattern: "[%d] [%p] %m"
@@ -72,6 +72,7 @@ log4js.configure(
         }
     }
 );
+console.debug("Logger initialized");
 
 export const logger = log4js.getLogger('logger');
 export const api = log4js.getLogger('api');
