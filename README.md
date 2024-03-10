@@ -52,7 +52,7 @@ npm run start
     "files",
     "basePath",
     "md5",
-    "publicKey"
+    "ignoredKey"
   ]
 }
 ```
