@@ -101,8 +101,5 @@ type UpdateConfig = {
         "version": string,
         "changeLog": string,
         "jarPath": string
-    },
-    "auth": {
-        "key": string
     }
 }

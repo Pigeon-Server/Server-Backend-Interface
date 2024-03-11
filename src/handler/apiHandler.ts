@@ -2,7 +2,7 @@ import {NextFunction, Request, Response} from "express";
 import {Tracker} from "@/manager/trackerManager";
 import {Config} from "@/base/config";
 import {api} from "@/base/logger";
-import {clearApiCache, getNextClearTime, getPlayerStatus} from "@/manager/apiManager";
+import {checkApiKey, clearApiCache, getNextClearTime, getPlayerStatus} from "@/manager/apiManager";
 import {EncryptUtils} from "@/utils/encryptUtils";
 import {Database} from "@/base/mysql";
 import {Utils} from "@/utils/utils";
@@ -40,9 +40,9 @@ export namespace ApiHandler {
         });
     };
 
-    export const clearApiCacheHandler = (req: Request, res: Response) => {
+    export const clearApiCacheHandler = async (req: Request, res: Response) => {
         const {key} = req.body;
-        if (key === updateConfig.auth.key) {
+        if (await checkApiKey(<string>key)) {
             clearApiCache();
             res.status(200).json({status: true});
             return;
