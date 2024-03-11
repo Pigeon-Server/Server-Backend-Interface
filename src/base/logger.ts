@@ -22,6 +22,7 @@ log4js.configure(
                 type: "dateFile",
                 filename: "logs/access",
                 pattern: "yyyy-MM-dd.log",
+                ...optional,
                 layout: {
                     type: "pattern",
                     pattern: "[%d] [%p] %m"
