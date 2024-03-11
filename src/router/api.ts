@@ -12,9 +12,9 @@ apiRouter.get("/update_link", ApiHandler.updateLinkHandler);
 
 apiRouter.use(ApiHandler.verifyHandler);
 
-apiRouter.get("/get-access-key", ApiHandler.getAccessKeyHandler);
+apiRouter.post("/get-access-key", ApiHandler.getAccessKeyHandler);
 
 apiRouter.use(ApiHandler.packageConfigHandler);
 
-apiRouter.get("/check-update", ApiHandler.checkUpdateHandler);
+apiRouter.post("/check-update", ApiHandler.checkUpdateHandler);
 apiRouter.get("/get-source/:path(*)", ApiHandler.getSourceHandler);

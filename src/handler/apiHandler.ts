@@ -22,7 +22,7 @@ export namespace ApiHandler {
     const tracker = new Tracker(serverConfig.callLimit.count, serverConfig.callLimit.time);
 
     export const limitHandler = (req: Request, res: Response, next: NextFunction) => {
-        const {macAddress} = req.query;
+        const {macAddress} = req.method === 'GET' ? req.query : req.body;
         api.debug(`New access from ${req.ip}`);
         // api访问限制
         if (!tracker.trackIP(req.ip!, <string>macAddress)) {
@@ -70,7 +70,7 @@ export namespace ApiHandler {
             uuid,
             username,
             packName
-        } = req.query;
+        } = req.method === 'GET' ? req.query : req.body;
         api.debug(`Argument mac: ${macAddress}, uuid: ${uuid}, username: ${username}, packName: ${packName}`);
         // 验证参数
         if ([macAddress, uuid, username].includes(undefined)) {
@@ -124,7 +124,7 @@ export namespace ApiHandler {
             username,
             uuid,
             packName
-        } = req.query;
+        } = req.body;
         const result = await Database.INSTANCE.getKey(<PlayerGetKeyInfo>{
             username,
             uuid,
@@ -165,7 +165,7 @@ export namespace ApiHandler {
             accessKey,
             packName,
             macAddress
-        } = req.query;
+        } = req.method === 'GET' ? req.query : req.body;
         api.debug(`Argument accessKey: ${accessKey}`);
         if (accessKey === undefined) {
             api.warn(`Access Denial: No accessKey`);
@@ -213,7 +213,7 @@ export namespace ApiHandler {
         const {
             packName,
             localSource
-        } = req.query;
+        } = req.body;
         res.setHeader("X-Update-Max-Threads", updateConfig.updateMaxThread);
         const clientJson = generateJsonToClient(syncConfigCache[<string>packName]);
         if (encryptMD5(JSON.stringify(clientJson)) !== syncConfigCache[<string>packName].md5) {
