@@ -11,6 +11,8 @@ import type {Response} from "express";
 import {logger} from "@/base/logger";
 import {Config} from "@/base/config";
 import updateConfig = Config.updateConfig;
+import {Utils} from "@/utils/utils";
+import getTime = Utils.getTime;
 
 temp.defaults.baseURL = "https://skin.pigeon-server.cn";
 
@@ -30,13 +32,22 @@ const requestConfig: AxiosRequestConfig = {
  * @since 1.3.0
  * @export
  */
+
+let nextClear = getTime(true, updateConfig.apikey.clearInterval, "milliseconds");
+export const getNextClearTime = () => {
+    return nextClear;
+};
+logger.debug("Time of next cache clearing: " + nextClear);
+
 export function clearApiCache() {
+    nextClear = getTime(true, updateConfig.apikey.clearInterval, "milliseconds");
     userExist.clear();
     uuidCache.clear();
     logger.debug("Clear Api Cache.");
+    logger.debug("Time of next cache clearing: " + nextClear);
 }
 
-setInterval(clearApiCache, 3600000);
+setInterval(clearApiCache, updateConfig.apikey.clearInterval);
 
 /**
  * @field

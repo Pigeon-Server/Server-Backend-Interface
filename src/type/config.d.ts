@@ -92,7 +92,8 @@ type ServerConfig = {
 type UpdateConfig = {
     apikey: {
         timeout: number,
-        key: string
+        key: string,
+        clearInterval: number
     },
     updateMaxThread: number,
     "launchUpdate": {

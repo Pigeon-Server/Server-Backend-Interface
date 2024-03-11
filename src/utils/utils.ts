@@ -14,6 +14,7 @@ import stringRandom from 'string-random';
 import {Config} from "@/base/config";
 import serverConfig = Config.serverConfig;
 import updateConfig = Config.updateConfig;
+import {DurationInputArg2} from "moment/moment";
 
 moment.tz.setDefault('Asia/Shanghai');
 
@@ -39,17 +40,16 @@ export namespace Utils {
         res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     }
 
-    export function getTime(later: boolean): string {
+    export function getTime(later: boolean,
+                            lateTime: number = updateConfig.apikey.timeout,
+                            timeUnit: DurationInputArg2 = "seconds",
+                            timeFormat: string = "YYYY-MM-DD HH:mm:ss"): string {
         if (later)
-            return moment().add(updateConfig.apikey.timeout, "seconds").format('YYYY-MM-DD HH:mm:ss');
-        return moment().format('YYYY-MM-DD HH:mm:ss');
+            return moment().add(lateTime, timeUnit).format(timeFormat);
+        return moment().format(timeFormat);
     }
 
     export function generateKey(): string {
         return stringRandom(32, {letters: true, numbers: false});
     }
 }
-
-
-
-

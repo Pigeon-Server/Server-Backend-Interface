@@ -1,7 +1,8 @@
 {
   "apikey": {
     "timeout": 3600,
-    "key": "123456"
+    "key": "123456",
+    "clearInterval": 3600000
   },
   "updateMaxThread": 8,
   "launchUpdate": {

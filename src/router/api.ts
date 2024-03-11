@@ -5,7 +5,8 @@ export const apiRouter = express.Router();
 
 apiRouter.use(ApiHandler.limitHandler);
 
-apiRouter.post("/clearApiCache", ApiHandler.clearApiCacheHandler);
+apiRouter.get("/server-status", ApiHandler.getServerStatusHandler);
+apiRouter.post("/clear-api-cache", ApiHandler.clearApiCacheHandler);
 apiRouter.get("/get_jar", ApiHandler.getJarHandler);
 apiRouter.get("/update_link", ApiHandler.updateLinkHandler);
 

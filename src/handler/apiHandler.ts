@@ -2,7 +2,7 @@ import {NextFunction, Request, Response} from "express";
 import {Tracker} from "@/manager/trackerManager";
 import {Config} from "@/base/config";
 import {api} from "@/base/logger";
-import {clearApiCache, getPlayerStatus} from "@/manager/apiManager";
+import {clearApiCache, getNextClearTime, getPlayerStatus} from "@/manager/apiManager";
 import {EncryptUtils} from "@/utils/encryptUtils";
 import {Database} from "@/base/mysql";
 import {Utils} from "@/utils/utils";
@@ -31,6 +31,13 @@ export namespace ApiHandler {
             return;
         }
         next();
+    };
+
+    export const getServerStatusHandler = (req: Request, res: Response) => {
+        res.status(200).json({
+            status: true,
+            next_flush: getNextClearTime()
+        });
     };
 
     export const clearApiCacheHandler = (req: Request, res: Response) => {
