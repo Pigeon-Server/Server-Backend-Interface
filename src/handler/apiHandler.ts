@@ -23,7 +23,7 @@ export namespace ApiHandler {
 
     export const limitHandler = (req: Request, res: Response, next: NextFunction) => {
         const {macAddress} = req.method === 'GET' ? req.query : req.body;
-        api.debug(`New access from ${req.ip}`);
+        api.info(`New access from ${req.ip}`);
         // api访问限制
         if (!tracker.trackIP(req.ip!, <string>macAddress)) {
             api.warn(`Access Denial: Api call limit`);
@@ -34,6 +34,7 @@ export namespace ApiHandler {
     };
 
     export const getServerStatusHandler = (req: Request, res: Response) => {
+        api.info(`Send server status to client`);
         res.status(200).json({
             status: true,
             next_flush: getNextClearTime()
@@ -47,10 +48,12 @@ export namespace ApiHandler {
             res.status(200).json({status: true});
             return;
         }
+        api.warn(`Access Denial: Key authentication failed`);
         res.status(403).json({status: false});
     };
 
     export const getJarHandler = (_: Request, res: Response) => {
+        api.info(`Send hmcl jar to client`);
         res.download(updateConfig.launchUpdate.jarPath);
     };
 
@@ -61,6 +64,7 @@ export namespace ApiHandler {
             "changeLog": updateConfig.launchUpdate.changeLog,
             "version": updateConfig.launchUpdate.version
         };
+        api.info(`Send update link to client`);
         res.status(200).json(jarConfig);
     };
 
@@ -226,6 +230,7 @@ export namespace ApiHandler {
             res.status(304).send();
             return;
         }
+        api.info(`Send package config to client for ${packName}`);
         res.status(200).json(clientJson);
     };
 
