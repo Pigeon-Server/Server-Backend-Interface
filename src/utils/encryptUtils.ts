@@ -2,8 +2,10 @@
  * @file encryptUtils.ts
  * @desc 哈希编码相关操作
  * @author Half_nothing
+ * @email Half_nothing@163.com
  * @since 1.3.0
  * @date 2024.03.03
+ * @license GNU General Public License (GPL)
  **********************************************/
 
 import {createHash} from "crypto";

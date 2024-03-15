@@ -1,3 +1,12 @@
+/**********************************************
+ * @file logger.ts
+ * @desc 日志记录器
+ * @author Half_nothing
+ * @email Half_nothing@163.com
+ * @since 1.3.0
+ * @date 2024.03.15
+ * @license GNU General Public License (GPL)
+ **********************************************/
 import log4js from "log4js";
 
 const optional = {

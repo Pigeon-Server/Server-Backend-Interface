@@ -1,7 +1,16 @@
+/**********************************************
+ * @file apiHandler.ts
+ * @desc api接口处理器
+ * @author Half_nothing
+ * @email Half_nothing@163.com
+ * @since 1.3.0
+ * @date 2024.03.15
+ * @license GNU General Public License (GPL)
+ **********************************************/
 import {NextFunction, Request, Response} from "express";
 import {Tracker} from "@/manager/trackerManager";
 import {Config} from "@/base/config";
-import {api} from "@/base/logger";
+import {api, logger} from "@/base/logger";
 import {checkApiKey, clearApiCache, getNextClearTime, getPlayerStatus} from "@/manager/apiManager";
 import {EncryptUtils} from "@/utils/encryptUtils";
 import {Database} from "@/base/mysql";
@@ -33,7 +42,12 @@ export namespace ApiHandler {
         next();
     };
 
-    export const getServerStatusHandler = (req: Request, res: Response) => {
+    export const interfaceDeprecatedHandler = (req: Request, res: Response) => {
+        logger.warn(`Interface /api${req.url} accessed by method ${req.method} has been deprecated`);
+        res.status(405).json({status: false, msg: "此接口已被弃用,请更新启动器"});
+    };
+
+    export const getServerStatusHandler = (_: Request, res: Response) => {
         api.info(`Send server status to client`);
         res.status(200).json({
             status: true,

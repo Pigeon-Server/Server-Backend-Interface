@@ -2,8 +2,10 @@
  * @file trackerManager.ts
  * @desc API访问限制器
  * @author Half_nothing
+ * @email Half_nothing@163.com
  * @since 1.3.0
  * @date 2024.03.04
+ * @license GNU General Public License (GPL)
  **********************************************/
 
 /**

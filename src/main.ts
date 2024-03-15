@@ -13,13 +13,14 @@ import fs from "fs";
 import https from "https";
 import http from "http";
 import {Config} from "@/base/config";
-import serverConfig = Config.serverConfig;
 import {Utils} from "@/utils/utils";
-import enableHSTS = Utils.enableHSTS;
 import {apiRouter} from "@/router/api";
 import {FileUtils} from "@/utils/fileUtils";
-import checkFileExist = FileUtils.checkFileExist;
 import {initCatcher} from "@/base/catcher";
+
+import serverConfig = Config.serverConfig;
+import enableHSTS = Utils.enableHSTS;
+import checkFileExist = FileUtils.checkFileExist;
 
 initCatcher();
 SyncFileManager.checkSyncCache();

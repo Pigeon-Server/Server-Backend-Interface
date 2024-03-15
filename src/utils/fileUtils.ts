@@ -2,8 +2,10 @@
  * @file fileUtils.ts
  * @desc 文件目录相关操作
  * @author Half_nothing
+ * @email Half_nothing@163.com
  * @since 1.3.0
  * @date 2024.03.03
+ * @license GNU General Public License (GPL)
  **********************************************/
 import {accessSync, constants, writeFileSync, mkdirSync, readdirSync, statSync, WriteFileOptions} from "fs";
 import {join, relative} from "path";

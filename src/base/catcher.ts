@@ -2,8 +2,10 @@
  * @file catcher.ts
  * @desc 全局异常捕获器
  * @author Half_nothing
+ * @email Half_nothing@163.com
  * @since 1.3.2
  * @date 2024.03.11
+ * @license GNU General Public License (GPL)
  **********************************************/
 import process from "node:process";
 import {logger} from "@/base/logger";

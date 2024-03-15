@@ -1,10 +1,11 @@
 /**********************************************
- * @file 工具
- * @module utils
+ * @file apiManager.ts
+ * @desc 工具类
  * @author Half_nothing
- * @version 1.0.4
- * @since 1.0.0
+ * @email Half_nothing@163.com
+ * @since 1.3.0
  * @date 2024.03.03
+ * @license GNU General Public License (GPL)
  **********************************************/
 import type {Response} from "express";
 import moment from "moment-timezone";

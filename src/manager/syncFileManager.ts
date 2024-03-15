@@ -1,9 +1,11 @@
 /**********************************************
  * @file syncFileManager.ts
- * @desc None
+ * @desc 同步配置文件解析和缓存生成
  * @author Half_nothing
+ * @email Half_nothing@163.com
  * @since 1.3.0
  * @date 2024.03.04
+ * @license GNU General Public License (GPL)
  **********************************************/
 import {Config} from "@/base/config";
 import {logger} from "@/base/logger";

@@ -1,9 +1,11 @@
 /**********************************************
- * @file 数据库相关函数
- * @module mysql
+ * @file config.ts
+ * @desc 配置文件加载
  * @author Half_nothing
- * @since 1.0.0
+ * @email Half_nothing@163.com
+ * @since 1.3.0
  * @date 2024.03.03
+ * @license GNU General Public License (GPL)
  **********************************************/
 import {createPool, Pool} from 'mysql2';
 import type {ResultSetHeader} from 'mysql2';

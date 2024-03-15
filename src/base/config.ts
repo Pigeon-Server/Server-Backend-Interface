@@ -1,3 +1,12 @@
+/**********************************************
+ * @file config.ts
+ * @desc 配置文件加载
+ * @author Half_nothing
+ * @email Half_nothing@163.com
+ * @since 1.3.0
+ * @date 2024.03.15
+ * @license GNU General Public License (GPL)
+ **********************************************/
 import {FileUtils} from "@/utils/fileUtils";
 import {logger} from "./logger";
 import {readFileSync, writeFileSync} from "fs";
@@ -49,8 +58,12 @@ if (exit) process.exit(-1);
 logger.debug("Config file check finish");
 
 export namespace Config {
+    // 数据库配置
     export const databaseConfig: DatabaseConfig = require("@config/DatabaseConfig.json");
+    // 服务器配置
     export const serverConfig: ServerConfig = require("@config/ServerConfig.json");
+    // 同步配置
     export const syncConfig: SyncConfig = require("@config/SyncConfig.json");
+    // hmcl更新和同步配置
     export const updateConfig: UpdateConfig = require("@config/UpdateConfig.json");
 }

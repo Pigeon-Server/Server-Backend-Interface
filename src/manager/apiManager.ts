@@ -2,8 +2,10 @@
  * @file apiManager.ts
  * @desc 皮肤站api以及缓存实现
  * @author Half_nothing
+ * @email Half_nothing@163.com
  * @since 1.3.0
  * @date 2024.03.03
+ * @license GNU General Public License (GPL)
  **********************************************/
 import axios_ from "axios";
 import type {AxiosStatic, AxiosRequestConfig} from "axios";
