@@ -102,22 +102,6 @@ export class Database {
                     logger.error("Database Create Error!");
                     process.exit(-1);
                 }
-                this.databasePool!.query(`CREATE TABLE IF NOT EXISTS \`${databaseConfig.prefix}_access\`` +
-                    "(`id` int NOT NULL AUTO_INCREMENT," +
-                    "`username` char(16) NOT NULL," +
-                    "`uuid` char(32) NOT NULL," +
-                    "`mac` char(20) NOT NULL," +
-                    "`ip` char(40) NOT NULL," +
-                    "`pack` varchar(64) NOT NULL," +
-                    "`source` varchar(128) NOT NULL," +
-                    "`time` datetime NOT NULL," +
-                    "PRIMARY KEY (`id`)," +
-                    "UNIQUE INDEX `id`(`id`)," +
-                    "INDEX `info`(`username`, `uuid`, `mac`)," +
-                    "CONSTRAINT `access` FOREIGN KEY (`username`, `uuid`, `mac`) " +
-                    `REFERENCES \`${databaseConfig.prefix}_user\` (\`username\`, \`uuid\`, \`mac\`)` +
-                    "ON DELETE CASCADE " +
-                    "ON UPDATE CASCADE);");
                 this.databasePool!.query(`CREATE TABLE IF NOT EXISTS \`${databaseConfig.prefix}_key\`` +
                     "(`id` int NOT NULL AUTO_INCREMENT," +
                     "`username` char(16) NOT NULL," +
@@ -285,31 +269,6 @@ export class Database {
                                                                                    createTime, expirationTime)
                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [info.username, info.uuid, info.macAddress, info.ip, info.packName, info.key, 1, getTime(false), getTime(true)],
-                (err, res: ResultSetHeader) => err ? reject(err) : resolve(res))
-        })
-    }
-
-    /**
-     * @function
-     * @description 添加某个玩家访问某个资源的记录
-     * @param info {PlayerViewInfo} 玩家信息
-     * @returns {Promise<ResultSetHeader>}
-     * @version 1.0.0
-     * @since 1.3.0
-     * @export
-     */
-    addUserAccess(info: PlayerViewInfo): Promise<ResultSetHeader> {
-        return new Promise((resolve, reject) => {
-            if (checkInput([info.username, info.packName])) {
-                reject(new Error("Illegal Input"));
-                return;
-            }
-            this.databasePool.query(`INSERT INTO \`${databaseConfig.prefix}_access\` (username, uuid, mac, ip,
-                                                                                      pack,
-                                                                                      source,
-                                                                                      time)
-                                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [info.username, info.uuid, info.macAddress, info.ip, info.packName, info.path, getTime(false)],
                 (err, res: ResultSetHeader) => err ? reject(err) : resolve(res))
         })
     }

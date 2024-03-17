@@ -11,7 +11,7 @@ import log4js from "log4js";
 
 const optional = {
     maxLogSize: "10M",
-    numBackups: 10,
+    numBackups: 7,
     compress: true,
     alwaysIncludePattern: true
 };
@@ -56,28 +56,44 @@ log4js.configure(
                     type: "pattern",
                     pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
                 }
+            },
+            file: {
+                type: "dateFile",
+                filename: "logs/file",
+                pattern: "yyyy-MM-dd.log",
+                ...optional,
+                numBackups: 30,
+                layout: {
+                    type: "pattern",
+                    pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
+                }
             }
         },
         categories: {
             default: {
                 appenders: ['console'],
                 enableCallStack: true,
-                level: 'debug'
+                level: 'trace'
             },
             connection: {
                 appenders: ['access'],
                 enableCallStack: true,
-                level: 'debug'
+                level: 'trace'
             },
             logger: {
                 appenders: ['console', 'logger'],
                 enableCallStack: true,
-                level: 'debug'
+                level: 'trace'
             },
             api: {
                 appenders: ['console', 'api'],
                 enableCallStack: true,
-                level: 'debug'
+                level: 'trace'
+            },
+            file: {
+                appenders: ['console', 'file'],
+                enableCallStack: true,
+                level: 'trace'
             }
         }
     }
@@ -86,6 +102,7 @@ console.debug("Logger initialized");
 
 export const logger = log4js.getLogger('logger');
 export const api = log4js.getLogger('api');
+export const file = log4js.getLogger('file');
 export const connectionLogger = log4js.connectLogger(log4js.getLogger('connection'),
     {
         level: 'auto',

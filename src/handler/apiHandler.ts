@@ -10,7 +10,7 @@
 import {NextFunction, Request, Response} from "express";
 import {Tracker} from "@/manager/trackerManager";
 import {Config} from "@/base/config";
-import {api, logger} from "@/base/logger";
+import {api, file, logger} from "@/base/logger";
 import {checkApiKey, clearApiCache, getNextClearTime, getPlayerStatus} from "@/manager/apiManager";
 import {EncryptUtils} from "@/utils/encryptUtils";
 import {Database} from "@/base/mysql";
@@ -256,16 +256,9 @@ export namespace ApiHandler {
             packName
         } = req.query;
         const path = req.params.path;
-        Database.INSTANCE.addUserAccess(<PlayerViewInfo>{
-            username,
-            uuid,
-            macAddress,
-            ip: req.ip,
-            packName,
-            path
-        }).catch(err => api.error(err.message));
         const {basePath} = syncConfigCache[<string>packName];
         const destinationPath = `${basePath}/${path}`;
+        file.info(`${username}[${uuid}](${macAddress}\\${req.ip}) downloading ${destinationPath}`);
         try {
             accessSync(destinationPath, constants.F_OK);
             api.info(`Send file ${destinationPath} to ${username}`);
