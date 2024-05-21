@@ -8,25 +8,26 @@
  * @license GNU General Public License (GPL)
  **********************************************/
 import express from "express";
-import {ApiHandler} from "@/handler/apiHandler";
+import {ApiController} from "@/controller/apiController";
+import {ApiMiddleWare} from "@/middleware/apiMiddleWare";
 
 export const apiRouter = express.Router();
 
-apiRouter.use(ApiHandler.limitHandler);
+apiRouter.use(ApiMiddleWare.checkCallLimit);
 
-apiRouter.get("/get-access-key", ApiHandler.interfaceDeprecatedHandler);
-apiRouter.get("/check-update", ApiHandler.interfaceDeprecatedHandler);
+apiRouter.get("/get-access-key", ApiController.interfaceDeprecatedHandler);
+apiRouter.get("/check-update", ApiController.interfaceDeprecatedHandler);
 
-apiRouter.get("/server-status", ApiHandler.getServerStatusHandler);
-apiRouter.post("/clear-api-cache", ApiHandler.clearApiCacheHandler);
-apiRouter.get("/get_jar", ApiHandler.getJarHandler);
-apiRouter.get("/update_link", ApiHandler.updateLinkHandler);
+apiRouter.get("/server-status", ApiController.getServerStatusHandler);
+apiRouter.post("/clear-api-cache", ApiController.clearApiCacheHandler);
+apiRouter.get("/get_jar", ApiController.getJarHandler);
+apiRouter.get("/update_link", ApiController.updateLinkHandler);
 
-apiRouter.use(ApiHandler.verifyHandler);
+apiRouter.use(ApiMiddleWare.verifyArgs);
 
-apiRouter.post("/get-access-key", ApiHandler.getAccessKeyHandler);
+apiRouter.post("/get-access-key", ApiController.getAccessKeyHandler);
 
-apiRouter.use(ApiHandler.packageConfigHandler);
+apiRouter.use(ApiMiddleWare.verifyPackageConfig);
 
-apiRouter.post("/check-update", ApiHandler.checkUpdateHandler);
-apiRouter.get("/get-source/:path(*)", ApiHandler.getSourceHandler);
+apiRouter.post("/check-update", ApiController.checkUpdateHandler);
+apiRouter.get("/get-source/:path(*)", ApiController.getSourceHandler);
