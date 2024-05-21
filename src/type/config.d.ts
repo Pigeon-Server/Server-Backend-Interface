@@ -96,10 +96,10 @@ type UpdateConfig = {
         clearInterval: number
     },
     updateMaxThread: number,
-    "launchUpdate": {
-        "baseUrl": string,
-        "version": string,
-        "changeLog": string,
-        "jarPath": string
+    launchUpdate: {
+        baseUrl: string,
+        version: string,
+        changeLog: string,
+        jarPath: string
     }
 }

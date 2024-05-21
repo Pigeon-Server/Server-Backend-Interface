@@ -17,13 +17,71 @@ import process from "node:process";
 import databaseConfig = Config.databaseConfig;
 import getTime = Utils.getTime;
 import checkInput = Utils.checkInput;
-import type {PlayerData, PlayerKeyData} from "@/type/database";
+import type {PlayerData, PlayerKeyData, SyncConfigBaseData, SyncConfigFolderData} from "@/type/database";
 
 
 export class Database {
     private static _INSTANCE?: Database;
     private databasePool!: Pool;
-
+    private static _initFinishCallBack?: Callback | undefined;
+    private static initSqlList: string[] = [
+        "CREATE TABLE IF NOT EXISTS `{prefix}user`(" +
+        "`id` int NOT NULL AUTO_INCREMENT," +
+        "`username` char(16) NOT NULL," +
+        "`uuid` char(32) NOT NULL," +
+        "`mac` char(20) NOT NULL," +
+        "`ip` char(40) NOT NULL," +
+        "`lastPack` char(64)," +
+        "`firstTime` datetime NOT NULL," +
+        "`updateTime` datetime Not NULL," +
+        "PRIMARY KEY (`id`, `username`, `uuid`)," +
+        "UNIQUE INDEX `id`(`id`)," +
+        "UNIQUE INDEX `info`(`username`, `uuid`, `mac`));",
+        "CREATE TABLE IF NOT EXISTS `{prefix}key`(" +
+        "`id` int NOT NULL AUTO_INCREMENT," +
+        "`username` char(16) NOT NULL," +
+        "`uuid` char(32) NOT NULL," +
+        "`mac` char(20) NOT NULL," +
+        "`ip` char(40) NOT NULL," +
+        "`pack` varchar(64) NOT NULL," +
+        "`accessKey` char(32) NOT NULL," +
+        "`enable` tinyint(1) NOT NULL," +
+        "`createTime` datetime NOT NULL," +
+        "`expirationTime` datetime NOT NULL," +
+        "PRIMARY KEY (`id`)," +
+        "UNIQUE INDEX `id`(`id`) USING BTREE," +
+        "INDEX `info`(`username`, `uuid`, `mac`) USING BTREE," +
+        "CONSTRAINT `key` FOREIGN KEY (`username`, `uuid`, `mac`) " +
+        "REFERENCES `{prefix}user` (`username`, `uuid`, `mac`) " +
+        "ON DELETE CASCADE ON UPDATE CASCADE);",
+        "CREATE TABLE IF NOT EXISTS `{prefix}sync`(" +
+        "`id` int NOT NULL AUTO_INCREMENT," +
+        "`ruleId` int NOT NULL," +
+        "`configName` varchar(64) NULL DEFAULT NULL," +
+        "`serverPath` varchar(64) NOT NULL," +
+        "`clientPath` varchar(64) NULL DEFAULT NULL," +
+        "`root` tinyint(1) NOT NULL DEFAULT 0," +
+        "`syncMode` char(8) NULL DEFAULT NULL," +
+        "`syncFiles` text NULL," +
+        "`ignoreFile` text NULL," +
+        "`deleteFile` text NULL," +
+        "`md5` char(32) NULL DEFAULT NULL," +
+        "`createTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+        "`updateTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+        "PRIMARY KEY (`id`, `ruleId`) USING BTREE," +
+        "INDEX `index`(`id` ASC, `ruleId` ASC, `md5` ASC) USING BTREE," +
+        "CONSTRAINT `{prefix}sync_check_root` CHECK ((`root` = 0) or (`configName` is not null))," +
+        "CONSTRAINT `{prefix}sync_check_path` CHECK ((`root` = 1) or (`clientPath` is not null)));",
+        "SET GLOBAL event_scheduler = ON;",
+        "CREATE EVENT IF NOT EXISTS `updateKey` " +
+        "ON SCHEDULE " +
+        "EVERY {updateTime} SECOND " +
+        "DO " +
+        "UPDATE {prefix}key " +
+        "SET `enable` = FALSE " +
+        "WHERE `enable` = TRUE AND " +
+        "UNIX_TIMESTAMP( expirationTime ) + {updateTime} < UNIX_TIMESTAMP( now( ) );;"
+    ];
 
     static get INSTANCE(): Database {
         if (this._INSTANCE === undefined) {
@@ -32,7 +90,17 @@ export class Database {
         return this._INSTANCE;
     }
 
+    static set initFinishCallBack(callback: Callback) {
+        this._initFinishCallBack = callback
+    }
+
     private constructor() {
+        for (const i in Database.initSqlList) {
+            Database.initSqlList[i] = Database.initSqlList[i]
+                .replaceAll("{prefix}",
+                    databaseConfig.prefix === "" ? "" : databaseConfig.prefix + "_")
+                .replaceAll("{updateTime}", String(databaseConfig.updateTime));
+        }
         this.connectDatabase();
     }
 
@@ -69,11 +137,11 @@ export class Database {
                     conn.release();
                     return;
                 }
+                this.databaseInit().catch(err => logger.error(err.message));
                 logger.debug(`Database Version: ${results[0].version}`);
                 conn.release();
             })
         });
-        this.databaseInit().catch(err => logger.error(err.message));
     }
 
     /**
@@ -85,52 +153,18 @@ export class Database {
      * @export
      */
     private databaseInit(): Promise<void> {
-        return new Promise((_, __) => {
-            this.databasePool.query(`CREATE TABLE IF NOT EXISTS \`${databaseConfig.prefix}_user\`` +
-                "(`id` int NOT NULL AUTO_INCREMENT," +
-                "`username` char(16) NOT NULL," +
-                "`uuid` char(32) NOT NULL," +
-                "`mac` char(20) NOT NULL," +
-                "`ip` char(40) NOT NULL," +
-                "`lastPack` char(64)," +
-                "`firstTime` datetime NOT NULL," +
-                "`updateTime` datetime Not NULL," +
-                "PRIMARY KEY (`id`, `username`, `uuid`)," +
-                "UNIQUE INDEX `id`(`id`)," +
-                "UNIQUE INDEX `info`(`username`, `uuid`, `mac`));", (err, _) => {
-                if (err) {
-                    logger.error("Database Create Error!");
-                    process.exit(-1);
-                }
-                this.databasePool!.query(`CREATE TABLE IF NOT EXISTS \`${databaseConfig.prefix}_key\`` +
-                    "(`id` int NOT NULL AUTO_INCREMENT," +
-                    "`username` char(16) NOT NULL," +
-                    "`uuid` char(32) NOT NULL," +
-                    "`mac` char(20) NOT NULL," +
-                    "`ip` char(40) NOT NULL," +
-                    "`pack` varchar(64) NOT NULL," +
-                    "`accessKey` char(32) NOT NULL," +
-                    "`enable` tinyint(1) NOT NULL," +
-                    "`createTime` datetime NOT NULL," +
-                    "`expirationTime` datetime NOT NULL," +
-                    "PRIMARY KEY (`id`)," +
-                    "UNIQUE INDEX `id`(`id`) USING BTREE," +
-                    "INDEX `info`(`username`, `uuid`, `mac`) USING BTREE," +
-                    "CONSTRAINT `key` FOREIGN KEY (`username`, `uuid`, `mac`) " +
-                    `REFERENCES \`${databaseConfig.prefix}_user\` (\`username\`, \`uuid\`, \`mac\`) ` +
-                    "ON DELETE CASCADE " +
-                    "ON UPDATE CASCADE);");
-                this.databasePool!.query("SET GLOBAL event_scheduler = ON;");
-                this.databasePool!.query("CREATE EVENT IF NOT EXISTS `updateKey` " +
-                    "ON SCHEDULE " +
-                    `EVERY '${databaseConfig.updateTime}' SECOND ` +
-                    "DO " +
-                    `UPDATE \`${databaseConfig.prefix}_key\` ` +
-                    "SET `enable` = FALSE " +
-                    "WHERE " +
-                    "`enable` = TRUE " +
-                    `AND UNIX_TIMESTAMP( expirationTime ) + ${databaseConfig.updateTime} < UNIX_TIMESTAMP( now( ) );;`);
-            });
+        return new Promise(async (_, __) => {
+            const connection = await this.databasePool.promise().getConnection();
+            const queries: Promise<any>[] = [];
+            for (const sql of Database.initSqlList) {
+                queries.push(connection.query(sql));
+            }
+            await Promise.all(queries);
+            connection.release();
+            if (Database._initFinishCallBack) {
+                Database._initFinishCallBack();
+                Database._initFinishCallBack = undefined;
+            }
         })
     }
 
@@ -282,7 +316,7 @@ export class Database {
      * @since 1.3.0
      * @export
      */
-    getPlayDay(info: PlayerPlayInfo) {
+    getPlayDay(info: PlayerPlayInfo): Promise<ResultSetHeader> {
         return new Promise((resolve, reject) => {
             if (checkInput([info.username, info.packName])) {
                 reject(new Error("Illegal Input"));
@@ -294,7 +328,17 @@ export class Database {
                                        AND uuid = ?
                                        AND packName = ?;`,
                 [info.username, info.uuid, info.packName],
-                (err, res) => err ? reject(err) : resolve(res))
-        })
+                (err, res: ResultSetHeader) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    getAllSyncConfig(): Promise<SyncConfigBaseData[]> {
+        return new Promise((resolve, reject) => {
+            this.databasePool.query(`SELECT id, ruleId, configName, serverPath, md5, createTime, updateTime
+                                     FROM \`${databaseConfig.prefix}_sync\`
+                                     WHERE root = 1`,
+                [],
+                (err, res: SyncConfigBaseData[]) => err ? reject(err) : resolve(res))
+        });
     }
 }

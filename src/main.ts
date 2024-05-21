@@ -21,9 +21,10 @@ import {initCatcher} from "@/base/catcher";
 import serverConfig = Config.serverConfig;
 import enableHSTS = Utils.enableHSTS;
 import checkFileExist = FileUtils.checkFileExist;
+import {CommonMiddleWare} from "@/middleware/commonMiddleWare";
 
 initCatcher();
-SyncFileManager.checkSyncCache();
+Database.initFinishCallBack = SyncFileManager.checkSyncCache;
 Database.INSTANCE;
 
 const app = express();
@@ -31,11 +32,7 @@ const app = express();
 app.set('trust proxy', true);
 app.use(connectionLogger);
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-    enableHSTS(res);
-    logger.info(`[${req.protocol}] Client request ${req.path} from ${req.ip}`);
-    next();
-});
+app.use(CommonMiddleWare.accessRecord);
 
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
@@ -47,11 +44,7 @@ app.use('*', (_: Request, res: Response) => {
     res.redirect(serverConfig.homePage);
 });
 
-app.use((err: Error, _: Request, res: Response, __: NextFunction) => {
-    logger.error(`Server Error! ${err.message}`);
-    res.status(500);
-    res.send("Server Error!")
-});
+app.use(CommonMiddleWare.errorHandler);
 
 const port = serverConfig.port;
 
