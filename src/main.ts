@@ -7,21 +7,21 @@ import {connectionLogger, logger} from "@/base/logger";
 import {SyncFileManager} from "@/manager/syncFileManager";
 import {Database} from "@/base/mysql";
 import express from "express";
-import {NextFunction, Response, Request} from "express";
+import cors from 'cors';
+import {Response, Request} from "express";
 import process from "node:process";
 import fs from "fs";
 import https from "https";
 import http from "http";
 import {Config} from "@/base/config";
-import {Utils} from "@/utils/utils";
 import {apiRouter} from "@/router/api";
 import {FileUtils} from "@/utils/fileUtils";
 import {initCatcher} from "@/base/catcher";
 
 import serverConfig = Config.serverConfig;
-import enableHSTS = Utils.enableHSTS;
 import checkFileExist = FileUtils.checkFileExist;
 import {CommonMiddleWare} from "@/middleware/commonMiddleWare";
+import {frontendApiRouter} from "@/router/frontendApi";
 
 initCatcher();
 Database.initFinishCallBack = SyncFileManager.checkSyncCache;
@@ -37,7 +37,10 @@ app.use(CommonMiddleWare.accessRecord);
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 
+app.use(cors());
+
 app.use("/api", apiRouter);
+app.use("/ui/api", frontendApiRouter);
 
 app.use('*', (_: Request, res: Response) => {
     logger.info(`Not router match, redirect to home page ${serverConfig.homePage}`);

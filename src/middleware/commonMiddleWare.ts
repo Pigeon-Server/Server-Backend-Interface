@@ -6,7 +6,7 @@ export namespace CommonMiddleWare {
     import enableHSTS = Utils.enableHSTS;
     export const accessRecord = (req: Request, res: Response, next: NextFunction) => {
         enableHSTS(res);
-        logger.info(`[${req.protocol}] Client request ${req.path} from ${req.ip}`);
+        logger.info(`[${req.protocol}] Client request (${req.method})${req.path} from ${req.ip}`);
         next();
     };
     export const errorHandler = (err: Error, _: Request, res: Response, __: NextFunction) => {

@@ -17,7 +17,7 @@ import process from "node:process";
 import databaseConfig = Config.databaseConfig;
 import getTime = Utils.getTime;
 import checkInput = Utils.checkInput;
-import type {PlayerData, PlayerKeyData, SyncConfigBaseData, SyncConfigFolderData} from "@/type/database";
+import type {PlayerData, PlayerKeyData, SyncConfigBaseData} from "@/type/database";
 
 
 export class Database {
@@ -61,6 +61,7 @@ export class Database {
         "`serverPath` varchar(64) NOT NULL," +
         "`clientPath` varchar(64) NULL DEFAULT NULL," +
         "`root` tinyint(1) NOT NULL DEFAULT 0," +
+        "`enable` tinyint(1) NOT NULL DEFAULT 0," +
         "`syncMode` char(8) NULL DEFAULT NULL," +
         "`syncFiles` text NULL," +
         "`ignoreFile` text NULL," +
@@ -334,10 +335,30 @@ export class Database {
 
     getAllSyncConfig(): Promise<SyncConfigBaseData[]> {
         return new Promise((resolve, reject) => {
-            this.databasePool.query(`SELECT id, ruleId, configName, serverPath, md5, createTime, updateTime
+            this.databasePool.query(`SELECT id AS 'uuid',
+                                            ruleId AS 'id',
+                                            configName AS 'name',
+                                            \`enable\` as 'activity', 
+                                            createTime, updateTime
                                      FROM \`${databaseConfig.prefix}_sync\`
                                      WHERE root = 1`,
                 [],
+                (err, res: SyncConfigBaseData[]) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    getSyncConfigPage(start: number, end: number, search: string): Promise<SyncConfigBaseData[]> {
+        return new Promise((resolve, reject) => {
+            this.databasePool.query(`SELECT id AS 'uuid',
+                                            ruleId AS 'id',
+                                            configName AS 'name',
+                                            \`enable\` as 'activity', 
+                                            createTime, updateTime
+                                     FROM \`${databaseConfig.prefix}_sync\`
+                                     WHERE root = 1
+                                       AND ruleId BETWEEN ? AND ?
+                                       AND configName LIKE ?`,
+                [start < 0 ? 0 : start, end > start ? end : start, `%${search}%`],
                 (err, res: SyncConfigBaseData[]) => err ? reject(err) : resolve(res))
         });
     }

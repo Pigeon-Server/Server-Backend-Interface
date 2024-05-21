@@ -1,9 +1,8 @@
 type SyncConfigBase = {
+    uuid: number,
     id: number,
-    syncId: number,
-    configName: string,
-    serverPath: string,
-    md5?: string,
+    name: string,
+    activity: number
     createTime: string,
     updateTime: string
 }

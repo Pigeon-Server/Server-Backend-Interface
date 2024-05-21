@@ -14,7 +14,7 @@ export namespace ApiMiddleWare {
 
     export const checkCallLimit = (req: Request, res: Response, next: NextFunction) => {
         const {macAddress} = req.method === 'GET' ? req.query : req.body;
-        api.info(`New access from ${req.ip}`);
+        api.info(`New access from ${req.ip} is processing by apiController.`);
         // api访问限制
         if (!tracker.trackIP(req.ip!, <string>macAddress)) {
             api.warn(`Access Denial: Api call limit`);
