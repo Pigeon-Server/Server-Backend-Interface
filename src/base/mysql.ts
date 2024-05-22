@@ -7,23 +7,22 @@
  * @date 2024.03.03
  * @license GNU General Public License (GPL)
  **********************************************/
-import {createPool, Pool} from 'mysql2';
 import type {ResultSetHeader} from 'mysql2';
+import {createPool, Pool} from 'mysql2';
 import {logger} from "./logger";
 import {Utils} from "@/utils/utils";
 import {Config} from "./config";
 import process from "node:process";
-
+import {PlayerData, PlayerKeyData, SyncConfigFolderData, SyncConfigRootData, UiRuleListData} from "@/type/database";
 import databaseConfig = Config.databaseConfig;
 import getTime = Utils.getTime;
 import checkInput = Utils.checkInput;
-import type {PlayerData, PlayerKeyData, SyncConfigBaseData} from "@/type/database";
 
 
 export class Database {
     private static _INSTANCE?: Database;
     private databasePool!: Pool;
-    private static _initFinishCallBack?: Callback | undefined;
+    private static _initFinishCallBack?: AsyncCallback | undefined;
     private static initSqlList: string[] = [
         "CREATE TABLE IF NOT EXISTS `{prefix}user`(" +
         "`id` int NOT NULL AUTO_INCREMENT," +
@@ -91,7 +90,7 @@ export class Database {
         return this._INSTANCE;
     }
 
-    static set initFinishCallBack(callback: Callback) {
+    static set initFinishCallBack(callback: AsyncCallback) {
         this._initFinishCallBack = callback
     }
 
@@ -163,7 +162,7 @@ export class Database {
             await Promise.all(queries);
             connection.release();
             if (Database._initFinishCallBack) {
-                Database._initFinishCallBack();
+                await Database._initFinishCallBack();
                 Database._initFinishCallBack = undefined;
             }
         })
@@ -333,33 +332,52 @@ export class Database {
         });
     }
 
-    getAllSyncConfig(): Promise<SyncConfigBaseData[]> {
+    getAllSyncConfig(): Promise<SyncConfigRootData[]> {
         return new Promise((resolve, reject) => {
-            this.databasePool.query(`SELECT id AS 'uuid',
-                                            ruleId AS 'id',
-                                            configName AS 'name',
-                                            \`enable\` as 'activity', 
-                                            createTime, updateTime
+            this.databasePool.query(`SELECT *
                                      FROM \`${databaseConfig.prefix}_sync\`
                                      WHERE root = 1`,
                 [],
-                (err, res: SyncConfigBaseData[]) => err ? reject(err) : resolve(res))
+                (err, res: SyncConfigRootData[]) => err ? reject(err) : resolve(res))
         });
     }
 
-    getSyncConfigPage(start: number, end: number, search: string): Promise<SyncConfigBaseData[]> {
+    getSyncConfig(id: number): Promise<SyncConfigFolderData[]> {
         return new Promise((resolve, reject) => {
-            this.databasePool.query(`SELECT id AS 'uuid',
-                                            ruleId AS 'id',
+            this.databasePool.query(`SELECT *
+                                     FROM \`${databaseConfig.prefix}_sync\`
+                                     WHERE root = 0
+                                       and ruleId = ?`,
+                [id],
+                (err, res: SyncConfigFolderData[]) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    getSyncConfigPage(start: number, end: number, search: string): Promise<UiRuleListData[]> {
+        return new Promise((resolve, reject) => {
+            this.databasePool.query(`SELECT id         AS 'uuid',
+                                            ruleId     AS 'id',
                                             configName AS 'name',
-                                            \`enable\` as 'activity', 
-                                            createTime, updateTime
+                                            \`enable\` AS 'activity',
+                                            createTime,
+                                            updateTime
                                      FROM \`${databaseConfig.prefix}_sync\`
                                      WHERE root = 1
                                        AND ruleId BETWEEN ? AND ?
                                        AND configName LIKE ?`,
                 [start < 0 ? 0 : start, end > start ? end : start, `%${search}%`],
-                (err, res: SyncConfigBaseData[]) => err ? reject(err) : resolve(res))
+                (err, res: UiRuleListData[]) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    updateSyncConfigMd5(id: number, md5: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.databasePool.query(`UPDATE \`${databaseConfig.prefix}_sync\`
+                                     SET md5 = ?
+                                     WHERE root = 1
+                                       AND ruleId = ?`,
+                [md5, id],
+                (err, res) => err ? reject(err) : resolve(res))
         });
     }
 }

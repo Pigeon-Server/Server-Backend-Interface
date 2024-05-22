@@ -8,7 +8,7 @@
     "start": "node dist/main.js",
     "start:build": "tsc -p . && node dist/main.js",
     "update": "git checkout main && git pull && npm run start:build",
-    "dev": "ts-node-dev --respawn --transpile-only src/main.ts"
+    "dev": "ts-node-dev --respawn --ignore-watch syncConfigCache.json --transpile-only src/main.ts"
   },
   "repository": {
     "type": "git",

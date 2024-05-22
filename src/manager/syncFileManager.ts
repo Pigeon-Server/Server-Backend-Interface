@@ -14,6 +14,8 @@ import {FileUtils} from "@/utils/fileUtils";
 import {writeFileSync} from "fs";
 import {join} from "path";
 import lodash from "lodash";
+import {Database} from "@/base/mysql";
+import {SyncConfigBaseData} from "@/type/database";
 
 export namespace SyncFileManager {
     import syncConfig = Config.syncConfig;
@@ -22,6 +24,7 @@ export namespace SyncFileManager {
     import encryptMD5 = EncryptUtils.encryptMD5;
     import checkFileExist = FileUtils.checkFileExist;
     import checkDirExist = FileUtils.checkDirExist;
+    import updateConfig = Config.updateConfig;
 
     checkFileExist('config/syncConfigCache.json', true, JSON.stringify(syncConfig, null, 2));
 
@@ -164,9 +167,102 @@ export namespace SyncFileManager {
         writeFileSync('config/syncConfigCache.json', JSON.stringify(syncConfigCache, null, 2), 'utf-8');
     }
 
-    export function checkSyncCache() {
+    function translateStringToArray(data: SyncConfigBaseData[]) {
+        for (const datum of data) {
+            if (datum.syncFiles) {
+                if (typeof datum.syncFiles === "string") {
+                    datum.syncFiles = datum.syncFiles.split(',');
+                }
+            } else {
+                datum.syncFiles = [];
+            }
+            if (datum.ignoreFile) {
+                if (typeof datum.ignoreFile === "string") {
+                    datum.ignoreFile = datum.ignoreFile.split(',');
+                }
+            } else {
+                datum.ignoreFile = [];
+            }
+            if (datum.deleteFile) {
+                if (typeof datum.deleteFile === "string") {
+                    datum.deleteFile = datum.deleteFile.split(',');
+                }
+            } else {
+                datum.deleteFile = [];
+            }
+        }
+    }
+
+    async function getStoredSyncConfig() {
+        const data = await Database.INSTANCE.getAllSyncConfig();
+        translateStringToArray(data);
+        for (const datum of data) {
+            if (datum.enable === 0) {
+                // config disable
+                // if it has stored in local file
+                // delete it
+                if (datum.configName in syncConfig) {
+                    delete syncConfig[datum.configName];
+                }
+                if (datum.configName in syncConfig.md5) {
+                    delete syncConfig.md5[datum.configName]
+                }
+                continue;
+            }
+            const temp = {
+                basePath: datum.serverPath,
+                files: (<string[]>datum.syncFiles).reduce((tmp, value) => {
+                    tmp[value] = null;
+                    return tmp;
+                }, {} as { [key: string]: null })
+            } as SyncPackage;
+            // select sync folders from database
+            const detail = await Database.INSTANCE.getSyncConfig(datum.ruleId);
+            if (detail.length !== 0) {
+                translateStringToArray(detail);
+                for (const re of detail) {
+                    temp[re.clientPath] = {
+                        mode: re.syncMode,
+                        serverPath: re.serverPath,
+                        ignore: re.ignoreFile as string[],
+                        delete: re.deleteFile as string[]
+                    } as SyncFolder;
+                }
+            }
+            const md5 = encryptMD5(JSON.stringify(temp));
+            if (datum.md5 === undefined || datum.md5 !== md5) {
+                datum.md5 = md5;
+                await Database.INSTANCE.updateSyncConfigMd5(datum.ruleId, md5);
+            }
+            // syncConfig stored in syncConfigFile and has md5 record
+            if (datum.configName in syncConfig &&
+                datum.configName in syncConfig.md5 &&
+                syncConfig.md5[datum.configName] === datum.md5) {
+                // save md5, change nothing
+                continue;
+            }
+            // if syncConfig not stored in syncConfigFile or
+            // no md5 record or
+            // has difference between local md5 and database md5
+            // write md5 and syncConfig to local file
+            syncConfig.md5[datum.configName] = datum.md5;
+            syncConfig[datum.configName] = temp;
+        }
+        for (const packName in syncConfig.md5) {
+            if (!(packName in syncConfig)) {
+                delete syncConfig.md5[packName];
+            }
+        }
+        saveSyncConfig();
+    }
+
+    export async function checkSyncCache() {
         logger.debug(`Checking sync file`);
-        checkSyncFileUpdate();
+        if (updateConfig.useDatabase) {
+            await getStoredSyncConfig();
+        } else {
+            checkSyncFileUpdate();
+        }
         checkSyncFile();
         logger.debug(`Sync file check finish`);
     }

@@ -9,7 +9,7 @@ type SyncFolder = {
 type SyncPackage = {
     basePath: string,
     [key: string]: SyncFolder,
-    files: {
+    files?: {
         [key: string]: string | null
     }
 }
@@ -102,4 +102,5 @@ type UpdateConfig = {
         changeLog: string,
         jarPath: string
     }
+    useDatabase: boolean
 }

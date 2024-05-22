@@ -5,7 +5,6 @@
 /package-lock.json
 /config/*.json
 /.idea
+/request/http-client.private.env.json
 /resource
-/*.http
-/request
 /config.json

@@ -10,5 +10,6 @@
     "version": "123",
     "changeLog": "123",
     "jarPath": "123"
-  }
+  },
+  "useDatabase": false
 }
