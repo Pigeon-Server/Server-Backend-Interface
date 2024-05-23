@@ -1,12 +1,22 @@
 import {Request, Response} from "express";
 import {logger} from "@/base/logger";
 import {Database} from "@/base/mysql";
+import {SyncFileManager} from "@/manager/syncFileManager";
 
 export namespace FrontendApiController {
-    export const getAllRule = (req: Request, res: Response) => {
-        Database.INSTANCE.getAllSyncConfig().then(data => {
-            res.send(data);
-        })
+    import reloadSyncConfig = SyncFileManager.reloadSyncConfig;
+    export const reloadRules = async (req: Request, res: Response) => {
+        const status = await reloadSyncConfig();
+        if (status) {
+            res.statusCode = 200;
+        } else {
+            res.statusCode = 500;
+        }
+        res.send({
+            status: true,
+            msg: "",
+            data: status
+        } as Reply);
     };
 
     export const getRule = (req: Request, res: Response) => {
@@ -39,7 +49,7 @@ export namespace FrontendApiController {
                 status: true,
                 msg: "缺少查询参数",
                 data: {}
-            });
+            } as Reply);
             return;
         }
         const data = await Database.INSTANCE.getSyncConfigPage(
@@ -50,6 +60,6 @@ export namespace FrontendApiController {
             status: true,
             msg: "成功",
             data
-        });
+        } as Reply)
     }
 }

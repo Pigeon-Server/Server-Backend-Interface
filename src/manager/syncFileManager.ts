@@ -270,6 +270,16 @@ export namespace SyncFileManager {
         saveSyncConfig();
     }
 
+    export async function reloadSyncConfig() {
+        try {
+            await checkSyncCache();
+            return true;
+        } catch (e: any) {
+            logger.error(e);
+            return false;
+        }
+    }
+
     export async function checkSyncCache() {
         logger.debug(`SyncManager: Checking sync file`);
         await checkSyncFileUpdate();

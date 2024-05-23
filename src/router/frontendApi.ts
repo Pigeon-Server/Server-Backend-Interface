@@ -6,7 +6,7 @@ export const frontendApiRouter = express.Router();
 
 frontendApiRouter.use(FrontendApiMiddleWare.checkCallLimit);
 
-frontendApiRouter.get("/rules/get-all", FrontendApiController.getAllRule);
+frontendApiRouter.get("/rules/reload", FrontendApiController.reloadRules);
 
 frontendApiRouter.post("/rules/get-list", FrontendApiController.getRuleList);
 frontendApiRouter.post("/rules/create", FrontendApiController.addRule);

@@ -6,3 +6,9 @@ type RuleList = {
     createTime: string,
     updateTime: string
 }
+
+type Reply = {
+    status: boolean,
+    msg: string,
+    data: any
+}
