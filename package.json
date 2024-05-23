@@ -56,6 +56,7 @@
   },
   "_moduleAliases": {
     "@": "dist",
-    "@config": "config"
+    "@config": "config",
+    "@cache": "cache"
   }
 }

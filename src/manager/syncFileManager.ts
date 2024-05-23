@@ -26,68 +26,88 @@ export namespace SyncFileManager {
     import checkDirExist = FileUtils.checkDirExist;
     import updateConfig = Config.updateConfig;
 
-    checkFileExist('config/syncConfigCache.json', true, JSON.stringify(syncConfig, null, 2));
+    checkDirExist('cache', true);
+    checkFileExist('cache/SyncConfigCache.json', true, JSON.stringify(syncConfig, null, 2));
 
-    export const syncConfigCache: SyncCacheConfig = require('@config/syncConfigCache.json');
+    export const syncConfigCache: SyncCacheConfig = require('@cache/SyncConfigCache.json');
 
-    export function checkSyncFileUpdate() {
+    async function checkSyncFileUpdate() {
         if (syncConfig.md5 === undefined) {
             syncConfig.md5 = {}
         }
-        let needSave = false;
+        let excludeConfig: string[] = [];
+        if (updateConfig.useDatabase) {
+            await getStoredSyncConfig(excludeConfig);
+        }
         for (const packName in syncConfig) {
             if (syncConfig.ignoredKey.includes(packName)) continue;
-            logger.debug(`Calculate pack config ${packName}.`);
+            if (excludeConfig.includes(packName)) continue;
             const md5 = encryptMD5(JSON.stringify(syncConfig[packName]));
-            if (!(packName in syncConfigCache)) {
-                // @ts-ignore
-                syncConfigCache[packName] = lodash.cloneDeep(syncConfig[packName]);
-                logger.debug(`New package ${packName} has been added, md5: ${md5}.`);
-                syncConfig.md5[packName] = md5;
-                needSave = true;
-                continue;
+            if (syncConfig.md5[packName]) {
+                if (syncConfig.md5[packName] === md5) {
+                    logger.debug(`SyncConfig: ${packName} has no change.`);
+                    continue;
+                }
+                logger.debug(`SyncConfig: ${packName} has been changed, new md5: ${md5}.`);
+            } else {
+                logger.debug(`SyncConfig: New pack added ${packName}(${md5})`);
             }
-            if (syncConfig.md5[packName] === md5) {
-                logger.debug(`${packName} has no change.`);
-                continue;
-            }
-            logger.debug(`${packName} has been changed, new md5: ${md5}.`);
             syncConfig.md5[packName] = md5;
-            needSave = true;
         }
         for (const packName in syncConfig.md5) {
             if (!(packName in syncConfig)) {
-                logger.debug(`Can not find ${packName} config, remove md5`);
+                logger.debug(`SyncConfig: Can not find ${packName} config, remove md5`);
                 delete syncConfig.md5[packName];
-                needSave = true;
             }
         }
-        if (needSave) {
-            saveSyncConfig();
-        }
+        saveSyncConfig();
     }
 
-    export function checkSyncFile() {
+    function checkSyncConfigCache() {
         if (syncConfigCache.md5 === undefined) {
-            syncConfigCache.md5 = {}
+            syncConfigCache.md5 = {};
         }
         for (const packName in syncConfigCache) {
             if (syncConfigCache.ignoredKey.includes(packName)) continue;
+            // if cache pack config not in config file, delete cache
             if (!(packName in syncConfig)) {
                 delete syncConfigCache[packName];
-                logger.debug(`Pack config ${packName} don't exist, delete config cache`);
+                logger.debug(`SyncConfigCacheCheck: Pack config ${packName} don't exist, delete config cache`);
                 continue;
             }
-            if (syncConfig.md5[packName] !== syncConfigCache.md5[packName]) {
-                logger.debug(`Pack config ${packName} has been updated, remake config cache`);
-                // @ts-ignore
-                syncConfigCache[packName] = lodash.cloneDeep(syncConfig[packName]);
+            if (syncConfig.md5[packName] === syncConfigCache.md5[packName]) {
+                logger.debug(`SyncConfigCacheCheck: Pack config ${packName} has no change`);
+                continue;
+            }
+            // if cache md5 diff from config md5, remake cache
+            logger.debug(`SyncConfigCacheCheck: Pack config ${packName} has been updated, remake config cache`);
+            syncConfigCache[packName] = lodash.cloneDeep(syncConfig[packName]) as SyncPackageCache;
+            syncConfigCache.md5[packName] = syncConfig.md5[packName];
+            syncConfigCache[packName].init = false;
+        }
+        for (const packName in syncConfig.md5) {
+            // if config not in cache
+            if (!(packName in syncConfigCache)) {
+                logger.debug(`SyncConfigCacheCheck: New pack cache added ${packName}(${syncConfig.md5[packName]})`);
                 syncConfigCache.md5[packName] = syncConfig.md5[packName];
+                syncConfigCache[packName] = lodash.cloneDeep(syncConfig[packName]) as SyncPackageCache;
                 syncConfigCache[packName].init = false;
             }
+        }
+        for (const packName in syncConfigCache.md5) {
+            // if pack config not in cache, delete this config
+            if (!(packName in syncConfigCache)) {
+                logger.debug(`SyncConfigCacheCheck: Can not find ${packName} config, remove md5`);
+                delete syncConfigCache.md5[packName];
+            }
+        }
+    }
+
+    function makeSyncConfigCache() {
+        for (const packName in syncConfigCache.md5) {
             const pack = syncConfigCache[packName];
             if (pack.init) {
-                logger.debug(`Pack ${packName} has been init, check finish`);
+                logger.debug(`SyncConfigCache: Pack ${packName} has been init, check finish`);
                 continue;
             }
             if (pack.data === undefined) {
@@ -95,11 +115,11 @@ export namespace SyncFileManager {
             }
             const basePath = pack.basePath;
             if (basePath === undefined) {
-                logger.error(`Unable to find pack ${packName}'s path.`);
+                logger.error(`SyncConfigCache: Unable to find pack ${packName}'s path.`);
                 continue;
             }
-            logger.debug(`Package ${packName} now in process.`);
-            logger.debug(`Package ${packName}'s path is ${basePath}.`);
+            logger.debug(`SyncConfigCache: Package ${packName} now in process.`);
+            logger.debug(`SyncConfigCache: Package ${packName}'s path is ${basePath}.`);
             for (const packKey in pack) {
                 if (syncConfigCache.ignoredKey.includes(packKey)) continue;
                 if (pack.data.includes(packKey)) continue;
@@ -109,46 +129,40 @@ export namespace SyncFileManager {
                 const path = pack[folderName].serverPath;
                 const filePath = join(basePath, path);
                 if (!checkDirExist(filePath, true)) {
-                    logger.error(`Path ${filePath} not exist, create dir.`);
+                    logger.error(`SyncConfigCache: Path ${filePath} not exist, create dir.`);
+                    continue;
                 }
                 const temp = calculateFilesMd5(filePath, pack[folderName].ignore);
                 if (pack[folderName].delete !== undefined) {
-                    // @ts-ignore
-                    for (const packElement of pack[folderName].delete) {
+                    for (const packElement of pack[folderName].delete!) {
                         temp[packElement] = 'del';
                     }
                 }
                 pack[folderName].files = temp;
             }
-            for (const packKey in pack.files) {
-                if (pack.files[packKey] === 'del') continue;
-                const path = join(basePath, packKey);
-                if (!checkFileExist(path)) {
-                    logger.error(`File ${path} not found`);
-                    continue;
+            if (pack.files) {
+                for (const packKey in pack.files) {
+                    if (pack.files[packKey] === 'del') continue;
+                    const path = join(basePath, packKey);
+                    if (!checkFileExist(path)) {
+                        logger.error(`SyncConfigCache: File ${path} not found`);
+                        continue;
+                    }
+                    pack.files[packKey] = encryptFile(path, encryptMD5);
                 }
-                pack.files[packKey] = encryptFile(path, encryptMD5);
-            }
-            if (pack.files === undefined) {
+            } else {
                 pack.files = {};
             }
             const clientJson = generateJsonToClient(pack);
             pack.md5 = encryptMD5(JSON.stringify(clientJson));
             pack.init = true;
-            logger.debug(`Pack ${packName} init finish`);
-        }
-        for (const packName in syncConfigCache.md5) {
-            if (!(packName in syncConfigCache)) {
-                logger.debug(`Can not find ${packName} config, remove md5`);
-                delete syncConfigCache.md5[packName];
-            }
+            logger.debug(`SyncConfigCache: Pack ${packName} init finish`);
         }
         saveSyncConfigCache();
     }
 
     export function generateJsonToClient(pack: SyncPackageCache) {
-        // @ts-ignore
-        let clientJson: SyncClientConfig = {data: [], files: {}};
+        const clientJson = {} as SyncClientConfig;
         clientJson.data = lodash.cloneDeep(pack.data);
         for (const datum of pack.data) {
             clientJson[datum] = lodash.cloneDeep(pack[datum]);
@@ -164,7 +178,7 @@ export namespace SyncFileManager {
     }
 
     function saveSyncConfigCache() {
-        writeFileSync('config/syncConfigCache.json', JSON.stringify(syncConfigCache, null, 2), 'utf-8');
+        writeFileSync('cache/SyncConfigCache.json', JSON.stringify(syncConfigCache, null, 2), 'utf-8');
     }
 
     function translateStringToArray(data: SyncConfigBaseData[]) {
@@ -193,19 +207,18 @@ export namespace SyncFileManager {
         }
     }
 
-    async function getStoredSyncConfig() {
+    async function getStoredSyncConfig(excludeConfig: string[]) {
         const data = await Database.INSTANCE.getAllSyncConfig();
         translateStringToArray(data);
         for (const datum of data) {
+            excludeConfig.push(datum.configName);
             if (datum.enable === 0) {
                 // config disable
                 // if it has stored in local file
                 // delete it
+                logger.debug(`SyncConfigDB: ${datum.configName} config disable`);
                 if (datum.configName in syncConfig) {
                     delete syncConfig[datum.configName];
-                }
-                if (datum.configName in syncConfig.md5) {
-                    delete syncConfig.md5[datum.configName]
                 }
                 continue;
             }
@@ -238,32 +251,30 @@ export namespace SyncFileManager {
             if (datum.configName in syncConfig &&
                 datum.configName in syncConfig.md5 &&
                 syncConfig.md5[datum.configName] === datum.md5) {
-                // save md5, change nothing
+                // same md5, change nothing
+                logger.debug(`SyncConfigDB: ${datum.configName} has no change`);
                 continue;
             }
             // if syncConfig not stored in syncConfigFile or
             // no md5 record or
             // has difference between local md5 and database md5
             // write md5 and syncConfig to local file
+            if (datum.configName in syncConfig) {
+                logger.debug(`SyncConfigDB: ${datum.configName} has been changed, new md5: ${md5}`);
+            } else {
+                logger.debug(`SyncConfigDB: New pack added ${datum.configName}(${md5})`);
+            }
             syncConfig.md5[datum.configName] = datum.md5;
             syncConfig[datum.configName] = temp;
-        }
-        for (const packName in syncConfig.md5) {
-            if (!(packName in syncConfig)) {
-                delete syncConfig.md5[packName];
-            }
         }
         saveSyncConfig();
     }
 
     export async function checkSyncCache() {
-        logger.debug(`Checking sync file`);
-        if (updateConfig.useDatabase) {
-            await getStoredSyncConfig();
-        } else {
-            checkSyncFileUpdate();
-        }
-        checkSyncFile();
-        logger.debug(`Sync file check finish`);
+        logger.debug(`SyncManager: Checking sync file`);
+        await checkSyncFileUpdate();
+        checkSyncConfigCache();
+        makeSyncConfigCache();
+        logger.debug(`SyncManager: Sync file check finish`);
     }
 }
