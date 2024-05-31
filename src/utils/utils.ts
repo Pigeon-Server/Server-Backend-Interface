@@ -16,24 +16,11 @@ import {Config} from "@/base/config";
 import serverConfig = Config.serverConfig;
 import updateConfig = Config.updateConfig;
 import {DurationInputArg2} from "moment/moment";
+import {SyncConfigBaseData} from "@/type/database";
 
 moment.tz.setDefault('Asia/Shanghai');
 
 export namespace Utils {
-    export function dataBaseInjectionFiltering(str: string): RegExpMatchArray | null {
-        return str.toString().toLowerCase().match("\b(and|drop|;|sleep|\'|delete|or|true|false|version|insert|into|select|join|like|union|update|where|\")\b");
-    }
-
-    export function checkInput(array: string[]): boolean {
-        for (const item in array) {
-            if (array[item] && dataBaseInjectionFiltering(array[item])) {
-                logger.error(`SQL injection detected, illegal statement: ${array[item]}`);
-                return true;
-            }
-        }
-        return false;
-    }
-
     export function enableHSTS(res: Response): void {
         if (!serverConfig.https.enable || !serverConfig.https.enableHSTS) {
             return
@@ -52,5 +39,31 @@ export namespace Utils {
 
     export function generateKey(): string {
         return stringRandom(32, {letters: true, numbers: false});
+    }
+
+    export function translateStringToArray(data: SyncConfigBaseData[]) {
+        for (const datum of data) {
+            if (datum.syncFiles) {
+                if (typeof datum.syncFiles === "string") {
+                    datum.syncFiles = datum.syncFiles.split(',');
+                }
+            } else {
+                datum.syncFiles = [];
+            }
+            if (datum.ignoreFile) {
+                if (typeof datum.ignoreFile === "string") {
+                    datum.ignoreFile = datum.ignoreFile.split(',');
+                }
+            } else {
+                datum.ignoreFile = [];
+            }
+            if (datum.deleteFile) {
+                if (typeof datum.deleteFile === "string") {
+                    datum.deleteFile = datum.deleteFile.split(',');
+                }
+            } else {
+                datum.deleteFile = [];
+            }
+        }
     }
 }

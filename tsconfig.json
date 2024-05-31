@@ -14,6 +14,7 @@
     "resolveJsonModule": true,
     "inlineSourceMap": true,
     "baseUrl": "./src",
+    "experimentalDecorators": true,
     "paths": {
       "@config/*": ["../config/*"],
       "@cache/*": ["../cache/*"],

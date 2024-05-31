@@ -43,7 +43,7 @@ export namespace ApiMiddleWare {
             api.warn(`Access Denial: Account verification failed`);
             return;
         }
-        const result = await Database.INSTANCE.checkUserAccount(<PlayerLiteInfo>{
+        const result = await Database.instance.checkUserAccount(<PlayerLiteInfo>{
             username,
             uuid,
             macAddress
@@ -54,7 +54,7 @@ export namespace ApiMiddleWare {
             return;
         }
         if (result.length === 1) {
-            Database.INSTANCE.updateTime(<PlayerUpdateInfo>{
+            Database.instance.updateTime(<PlayerUpdateInfo>{
                 username,
                 uuid,
                 macAddress,
@@ -62,7 +62,7 @@ export namespace ApiMiddleWare {
                 packName
             }).catch(err => api.error(err.message));
         } else {
-            Database.INSTANCE.addUserAccount(<PlayerFullInfo>{
+            Database.instance.addUserAccount(<PlayerFullInfo>{
                 username,
                 uuid,
                 macAddress,
@@ -92,7 +92,7 @@ export namespace ApiMiddleWare {
             res.status(403).json({status: false, msg: "无accessKey"});
             return;
         }
-        const response = await Database.INSTANCE.getKey(<PlayerGetKeyInfo>{
+        const response = await Database.instance.getKey(<PlayerGetKeyInfo>{
             username,
             uuid,
             macAddress,

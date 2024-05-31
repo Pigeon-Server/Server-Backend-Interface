@@ -25,7 +25,7 @@ import {frontendApiRouter} from "@/router/frontendApi";
 
 initCatcher();
 Database.initFinishCallBack = SyncFileManager.checkSyncCache;
-Database.INSTANCE;
+Database.instance;
 
 const app = express();
 

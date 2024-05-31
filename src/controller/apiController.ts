@@ -73,7 +73,7 @@ export namespace ApiController {
             uuid,
             packName
         } = req.body;
-        const result = await Database.INSTANCE.getKey(<PlayerGetKeyInfo>{
+        const result = await Database.instance.getKey(<PlayerGetKeyInfo>{
             username,
             uuid,
             macAddress,
@@ -90,7 +90,7 @@ export namespace ApiController {
             return;
         }
         const key = generateKey();
-        Database.INSTANCE.setKey(<PlayerSetKeyInfo>{
+        Database.instance.setKey(<PlayerSetKeyInfo>{
             username,
             uuid,
             macAddress,
