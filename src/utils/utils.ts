@@ -37,6 +37,25 @@ export namespace Utils {
         return moment().format(timeFormat);
     }
 
+    export function translateTime(time: string): number {
+        time = time.toLowerCase();
+        const timeNumber = parseInt(time.substring(0, time.length - 1), 10);
+        switch (time.charAt(time.length - 1)) {
+            case 's':
+                return timeNumber;
+            case 'm':
+                return timeNumber * 60;
+            case 'h':
+                return timeNumber * 60 * 60;
+            case 'd':
+                return timeNumber * 60 * 60 * 24;
+            case 'y':
+                return timeNumber * 60 * 60 * 24 * 365;
+            default:
+                return timeNumber;
+        }
+    }
+
     export function generateKey(): string {
         return stringRandom(32, {letters: true, numbers: false});
     }

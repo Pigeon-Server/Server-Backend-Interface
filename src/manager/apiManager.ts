@@ -18,13 +18,19 @@ import getTime = Utils.getTime;
 
 axios_.defaults.baseURL = "https://skin.pigeon-server.cn";
 
-const userExist = new Map();
-const uuidCache = new Map();
+const accountCacheMap = new Map<string, { status: AccountStatus, uuid: string }>();
 const requestConfig: AxiosRequestConfig = {
     headers: {
         "api-key": updateConfig.apikey.key
     }
 };
+
+enum AccountStatus {
+    PASSED,
+    NOT_EXIST,
+    BANNED,
+    UUID_FAIL
+}
 
 /**
  * @function
@@ -43,8 +49,7 @@ logger.debug("Time of next cache clearing: " + nextClear);
 
 export function clearApiCache() {
     nextClear = getTime(true, updateConfig.apikey.clearInterval, "milliseconds");
-    userExist.clear();
-    uuidCache.clear();
+    accountCacheMap.clear();
     logger.debug("Clear Api Cache.");
     logger.debug("Time of next cache clearing: " + nextClear);
 }
@@ -67,8 +72,6 @@ export const axios: AxiosStatic = axios_;
  * @return {Promise<boolean>}
  * @return {true} 验证通过
  * @return {false} 验证失败
- * @version 1.0.0
- * @since 1.3.3
  * @export
  */
 export async function checkApiKey(key: string): Promise<boolean> {
@@ -87,56 +90,87 @@ export async function checkApiKey(key: string): Promise<boolean> {
  * @return {Promise<boolean>}
  * @return {true} 验证通过
  * @return {false} 验证失败
- * @version 1.0.0
- * @since 1.3.0
  * @export
  */
 export async function getPlayerStatus(username: string, uuid: string, res: Response): Promise<boolean> {
     logger.debug(`Checking account: ${username}(${uuid})`);
-    if (userExist.has(username)) {
+    if (accountCacheMap.has(username)) {
         logger.debug(`Account cache hit: ${username}`);
-        switch (userExist.get(username)) {
-            case 1:
-                logger.debug(`Verification passed: ${username}(${uuid})`);
-                return true;
-            case 2:
-                logger.debug(`${username} not found`);
-                res.status(435).json({status: false, msg: `账号${username}不存在`});
-                return false;
-            case 3:
-                logger.debug(`${username} has been banned`);
-                res.status(436).json({status: false, msg: `账号${username}已被封禁`});
-                return false;
-            case 4:
-                if (uuidCache.has(username) && uuidCache.get(username) === uuid) {
-                    logger.debug(`UUID verification fails, expect: ${uuidCache.get(username)}, got: ${uuid}`);
-                    res.status(437).json({status: false, msg: `UUID验证失败`});
+        const account = accountCacheMap.get(username)!!;
+        if (account.uuid === uuid) {
+            switch (account.status) {
+                case AccountStatus.PASSED:
+                    logger.debug(`Verification passed: ${username}(${uuid})`);
+                    return true;
+                case AccountStatus.NOT_EXIST:
+                    logger.debug(`${username} not found`);
+                    res.status(435).json({
+                        status: false,
+                        msg: `账号${username}不存在`
+                    } as Reply);
                     return false;
-                }
+                case AccountStatus.BANNED:
+                    logger.debug(`${username} has been banned`);
+                    res.status(436).json({
+                        status: false,
+                        msg: `账号${username}已被封禁`
+                    } as Reply);
+                    return false;
+                case AccountStatus.UUID_FAIL:
+                    logger.debug(`UUID verification fails, ${account.uuid}`);
+                    res.status(437).json({
+                        status: false,
+                        msg: `UUID验证失败`
+                    } as Reply);
+                    return false;
+            }
+        } else {
+            logger.debug(`Account uuid cache not match. Cached ${account.uuid}, now get ${uuid}, delete account cache`);
+            accountCacheMap.delete(username);
         }
     }
     const response = await axios.get(`/api/ps-api/player/status/${username}`, requestConfig);
     const {status, userstatus, playeruuid} = response.data;
-    uuidCache.set(username, uuid);
     if (status !== "1") {
         logger.debug(`${username} not found`);
-        res.status(435).json({status: false, msg: `账号${username}不存在`});
-        userExist.set(username, 2);
+        res.status(435).json({
+            status: false,
+            msg: `账号${username}不存在`
+        } as Reply);
+        accountCacheMap.set(username, {
+            status: AccountStatus.NOT_EXIST,
+            uuid: playeruuid
+        });
         return false;
     }
     if (userstatus === "0") {
         logger.debug(`${username} has been banned`);
-        res.status(436).json({status: false, msg: `账号${username}已被封禁`});
-        userExist.set(username, 3);
+        res.status(436).json({
+            status: false,
+            msg: `账号${username}已被封禁`
+        } as Reply);
+        accountCacheMap.set(username, {
+            status: AccountStatus.BANNED,
+            uuid: playeruuid
+        });
         return false;
     }
     if (playeruuid !== uuid) {
         logger.debug(`UUID verification fails, expect: ${playeruuid}, got: ${uuid}`);
-        res.status(437).json({status: false, msg: `UUID验证失败`});
-        userExist.set(username, 4);
+        res.status(437).json({
+            status: false,
+            msg: `UUID验证失败`
+        } as Reply);
+        accountCacheMap.set(username, {
+            status: AccountStatus.UUID_FAIL,
+            uuid: playeruuid
+        });
         return false;
     }
-    userExist.set(username, 1);
+    accountCacheMap.set(username, {
+        status: AccountStatus.PASSED,
+        uuid: playeruuid
+    });
     logger.debug(`Verification passed: ${username}(${uuid})`);
     return true;
 }

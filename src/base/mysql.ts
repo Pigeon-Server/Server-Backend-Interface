@@ -9,12 +9,19 @@
  **********************************************/
 import type {ResultSetHeader, RowDataPacket} from 'mysql2';
 import {createPool, Pool} from 'mysql2';
-import {file, logger} from "./logger";
-import {join as _join, reject} from 'lodash';
+import {logger} from "./logger";
+import {join as _join} from 'lodash';
 import {Utils} from "@/utils/utils";
 import {Config} from "./config";
 import process from "node:process";
-import {PlayerData, PlayerKeyData, SyncConfigFolderData, SyncConfigRootData, UiRuleListData} from "@/type/database";
+import {
+    AccountInfo,
+    PlayerData,
+    PlayerKeyData,
+    SyncConfigFolderData,
+    SyncConfigRootData,
+    UiRuleListData
+} from "@/type/database";
 import databaseConfig = Config.databaseConfig;
 import getTime = Utils.getTime;
 
@@ -27,6 +34,7 @@ export class Database {
     private static userTable: string;
     private static keyTable: string;
     private static syncTable: string;
+    private static accountTable: string;
     private static initSqlList: string[] = [
         "CREATE TABLE IF NOT EXISTS `{prefix_user}`(" +
         "`id` int NOT NULL AUTO_INCREMENT," +
@@ -76,6 +84,13 @@ export class Database {
         "INDEX `index`(`id` ASC, `ruleId` ASC, `md5` ASC) USING BTREE," +
         "CONSTRAINT `{prefix}sync_check_root` CHECK ((`root` = 0) or (`configName` is not null))," +
         "CONSTRAINT `{prefix}sync_check_path` CHECK ((`root` = 1) or (`clientPath` is not null)));",
+        "CREATE TABLE IF NOT EXISTS `{prefix_account}` (" +
+        "`id` int NOT NULL AUTO_INCREMENT," +
+        "`username` varchar(32) NOT NULL," +
+        "`password` varchar(64) NOT NULL," +
+        "`salt` varchar(32) NOT NULL," +
+        "`permission` int NOT NULL DEFAULT 0," +
+        "PRIMARY KEY (`id`, `username`));",
         "SET GLOBAL event_scheduler = ON;",
         "CREATE EVENT IF NOT EXISTS `updateKey` " +
         "ON SCHEDULE " +
@@ -103,12 +118,14 @@ export class Database {
         Database.keyTable = `${Database.tablePrefix}key`;
         Database.userTable = `${Database.tablePrefix}user`;
         Database.syncTable = `${Database.tablePrefix}sync`;
+        Database.accountTable = `${Database.tablePrefix}account`;
         for (const i in Database.initSqlList) {
             Database.initSqlList[i] = Database.initSqlList[i]
                 .replaceAll("{prefix}", Database.tablePrefix)
                 .replaceAll("{prefix_user}", Database.userTable)
                 .replaceAll("{prefix_key}", Database.keyTable)
                 .replaceAll("{prefix_sync}", Database.syncTable)
+                .replaceAll("{prefix_account}", Database.accountTable)
                 .replaceAll("{updateTime}", String(databaseConfig.updateTime));
         }
         this.connectDatabase();
@@ -436,6 +453,63 @@ export class Database {
                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [data.ruleId, data.ruleName, data.serverPath, data.clientPath, 0, 0, data.mode, data.ignore, data.delete],
                 (err, res) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    insertSyncConfigRoot(id: number, basePath: string, ruleName: string, files: RuleFile[]) {
+        return new Promise(async (resolve, reject) => {
+            const temp = files.length === 0 ? null : _join(files.map(file => file.clientPath), ',');
+            this.databasePool.execute(`INSERT INTO ${Database.syncTable}
+                                           (ruleId, configName, serverPath, root, enable, syncFiles)
+                                       VALUES (?, ?, ?, ?, ?, ?)`,
+                [id, ruleName, basePath, 1, 1, temp],
+                (err, res) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    deleteSyncConfig(id: number) {
+        return new Promise((resolve, reject) => {
+            this.databasePool.execute(`DELETE FROM ${Database.syncTable} WHERE ruleId = ?`,
+                [id],
+                (err, res) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    getAvailableRuleId(): Promise<{ ruleId: number }[]> {
+        return new Promise((resolve, reject) => {
+            this.databasePool.execute(`SELECT DISTINCT MAX(ruleId) AS 'ruleId' FROM ${Database.syncTable}`,
+                [],
+                (err, res: { ruleId: number }[] & RowDataPacket[]) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    enableSyncConfig(id: number) {
+        return new Promise(async (resolve, reject) => {
+            this.databasePool.execute(`UPDATE ${Database.syncTable}
+                                       SET \`enable\` = 1
+                                       WHERE root = 1
+                                         AND ruleId = ?`,
+                [id],
+                (err, res) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    disableSyncConfig(id: number) {
+        return new Promise(async (resolve, reject) => {
+            this.databasePool.execute(`UPDATE ${Database.syncTable}
+                                       SET \`enable\` = 0
+                                       WHERE root = 1
+                                         AND ruleId = ?`,
+                [id],
+                (err, res) => err ? reject(err) : resolve(res))
+        });
+    }
+
+    getAccountInfoByUsername(username: string): Promise<AccountInfo[]> {
+        return new Promise(async (resolve, reject) => {
+            this.databasePool.execute(`SELECT * FROM ${Database.accountTable} WHERE username = ?`,
+                [username],
+                (err, res: AccountInfo[]) => err ? reject(err) : resolve(res))
         });
     }
 }

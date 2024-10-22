@@ -14,7 +14,7 @@ import fs from "fs";
 import https from "https";
 import http from "http";
 import {Config} from "@/base/config";
-import {apiRouter} from "@/router/api";
+import {launcherApiRouter} from "@/router/launcherApi";
 import {FileUtils} from "@/utils/fileUtils";
 import {initCatcher} from "@/base/catcher";
 
@@ -22,6 +22,9 @@ import serverConfig = Config.serverConfig;
 import checkFileExist = FileUtils.checkFileExist;
 import {CommonMiddleWare} from "@/middleware/commonMiddleWare";
 import {frontendApiRouter} from "@/router/frontendApi";
+import {oauthApiRouter} from "@/router/oauthApi";
+import {authApiRouter} from "@/router/authApi";
+import {serverApiRouter} from "@/router/serverApi";
 
 initCatcher();
 Database.initFinishCallBack = SyncFileManager.checkSyncCache;
@@ -39,8 +42,11 @@ app.use(express.json());
 
 app.use(cors());
 
-app.use("/api", apiRouter);
-app.use("/ui/api", frontendApiRouter);
+app.use("/api/launcher", launcherApiRouter);
+app.use("/api/server", serverApiRouter);
+app.use("/api/ui", frontendApiRouter);
+app.use("/api/auth", authApiRouter);
+app.use("/api/oauth", oauthApiRouter);
 
 app.use('*', (_: Request, res: Response) => {
     logger.info(`Not router match, redirect to home page ${serverConfig.homePage}`);
@@ -66,10 +72,10 @@ if (serverConfig.https.enable) {
     }, app).listen(port);
     logger.info(`Server running at https://0.0.0.0${port === 443 ? "" : ":" + port}/`);
 } else {
-    http.createServer(app).listen(port);
     if (serverConfig.https.enableHSTS) {
         logger.error(`If you want to enable HSTS, please enable HTTPS first`);
         process.exit(-1)
     }
+    http.createServer(app).listen(port);
     logger.info(`Server running at http://0.0.0.0${port === 80 ? "" : ":" + port}/`);
 }

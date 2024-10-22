@@ -7,3 +7,10 @@ type SyncConfigFullData = RowDataPacket & SyncConfigFull
 type SyncConfigRootData = RowDataPacket & SyncConfigRoot
 type SyncConfigFolderData = RowDataPacket & SyncConfigFolder
 type UiRuleListData = RowDataPacket & RuleList
+type AccountInfo = RowDataPacket & {
+    id: number,
+    userName: string,
+    password: string,
+    salt: string,
+    permission: number
+}

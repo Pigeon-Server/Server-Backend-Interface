@@ -7,7 +7,7 @@ import {Database} from "@/base/mysql";
 import {accessSync, constants} from "fs";
 import {SyncFileManager} from "@/manager/syncFileManager";
 
-export namespace ApiMiddleWare {
+export namespace LauncherApiMiddleWare {
     import serverConfig = Config.serverConfig;
     import syncConfigCache = SyncFileManager.syncConfigCache;
     const tracker = new Tracker(serverConfig.callLimit.count, serverConfig.callLimit.time);

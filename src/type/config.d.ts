@@ -85,6 +85,11 @@ type ServerConfig = {
         count: number,
         time: number
     },
+    jwt: {
+        secretKey: string,
+        expiresIn: string,
+        refreshTokenExpiresIn: string
+    },
     homePage: string,
     port: number
 }
@@ -102,5 +107,10 @@ type UpdateConfig = {
         changeLog: string,
         jarPath: string
     }
-    useDatabase: boolean
+    oauth: {
+        clientId: number,
+        clientSecret: string
+    }
+    useDatabase: boolean,
+    fileBasePath: string
 }

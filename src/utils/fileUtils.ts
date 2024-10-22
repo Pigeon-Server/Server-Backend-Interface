@@ -10,6 +10,8 @@
 import {accessSync, constants, writeFileSync, mkdirSync, readdirSync, statSync, WriteFileOptions} from "fs";
 import {join, relative} from "path";
 import {EncryptUtils} from "./encryptUtils";
+import moment from "moment-timezone";
+import {first} from "lodash";
 
 /**
  * @namespace FileUtils
@@ -87,7 +89,7 @@ export namespace FileUtils {
      * @since 1.3.0
      * @export
      */
-    export function listFiles(directory: string, ignoreList?: string[]): string[] {
+    export function listAllFiles(directory: string, ignoreList?: string[]): string[] {
         let filesArray: string[] = [];
         const files = readdirSync(directory);
         files.forEach(file => {
@@ -99,7 +101,7 @@ export namespace FileUtils {
             if (stat.isFile()) {
                 filesArray.push(filePath);
             } else if (stat.isDirectory()) {
-                const subdirectoryFiles = listFiles(filePath, ignoreList);
+                const subdirectoryFiles = listAllFiles(filePath, ignoreList);
                 filesArray = filesArray.concat(subdirectoryFiles);
             }
         });
@@ -117,11 +119,40 @@ export namespace FileUtils {
      * @export
      */
     export function calculateFilesMd5(path: string, ignoreList?: string[]): { [key: string]: string } {
-        const files = listFiles(path, ignoreList);
+        const files = listAllFiles(path, ignoreList);
         const content: { [key: string]: string } = {};
         for (const file of files) {
             content[relative(path, file)] = encryptFile(file, encryptMD5);
         }
         return content;
+    }
+
+    export function getFileTree(directory: string) {
+        const tree: FileInfo[] = [];
+        const files = readdirSync(directory);
+        files.forEach(file => {
+            const filePath = join(directory, file);
+            const stat = statSync(filePath);
+            if (stat.isFile()) {
+                tree.push({
+                    name: file,
+                    path: filePath,
+                    isFile: true,
+                    size: stat.size,
+                    editTime: moment(stat.ctime).format("YYYY-MM-DD HH:mm:ss")
+                } as FileInfo);
+            } else if (stat.isDirectory()) {
+                tree.push({
+                    name: file,
+                    path: filePath,
+                    isFile: false,
+                    editTime: moment(stat.ctime).format("YYYY-MM-DD HH:mm:ss")
+                } as FileInfo);
+            }
+        });
+        tree.sort((a, b) => {
+            return a.isFile ? 1 : -1;
+        });
+        return tree;
     }
 }

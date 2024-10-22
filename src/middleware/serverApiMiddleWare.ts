@@ -3,13 +3,12 @@ import {NextFunction, Request, Response} from "express";
 import {api} from "@/base/logger";
 import {Config} from "@/base/config";
 
-export namespace FrontendApiMiddleWare {
+export namespace ServerApiMiddleware {
     import serverConfig = Config.serverConfig;
-    import updateConfig = Config.updateConfig;
     const tracker = new Tracker(serverConfig.callLimit.count, serverConfig.callLimit.time);
 
     export const checkCallLimit = (req: Request, res: Response, next: NextFunction) => {
-        api.info(`New access from ${req.ip} is processing by frontendApiController`);
+        api.info(`New access from ${req.ip} is processing by serverApiController`);
         // api访问限制
         if (!tracker.trackIP(req.ip!)) {
             api.warn(`Access Denial: Api call limit`);

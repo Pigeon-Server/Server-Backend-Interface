@@ -45,3 +45,20 @@ type Reply = {
     msg: string,
     data: any
 }
+
+type FileInfo = {
+    name: string,
+    path: string,
+    isFile: boolean,
+    size?: number,
+    editTime?: string
+}
+
+
+type AuthInfo = {
+    username: string,
+    permission: number,
+    tokenExpiresIn: number,
+    token: string,
+    refreshToken: string
+}

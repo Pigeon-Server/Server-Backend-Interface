@@ -11,5 +11,10 @@
     "changeLog": "123",
     "jarPath": "123"
   },
-  "useDatabase": false
+  "oauth": {
+    "clientId": 1,
+    "clientSecret": "123"
+  },
+  "useDatabase": false,
+  "fileBasePath": "source"
 }
