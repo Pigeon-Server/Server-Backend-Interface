@@ -36,6 +36,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@sequelize/core": "^7.0.0-alpha.42",
+    "@sequelize/mysql": "^7.0.0-alpha.43",
     "archiver": "^5.3.1",
     "axios": "^1.6.7",
     "cookie-parser": "^1.4.6",

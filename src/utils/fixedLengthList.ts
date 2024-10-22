@@ -1,4 +1,4 @@
-class FixedLengthList<T> {
+export class FixedLengthList<T> {
     private items: T[] = [];
     private readonly maxLength: number;
 
