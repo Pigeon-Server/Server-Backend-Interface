@@ -68,9 +68,9 @@ log4js.configure(
                     pattern: "[%d] [%p] [%c|%z] [%f{1}|%l:%o] - %m"
                 }
             },
-            mysql: {
+            sql: {
                 type: "dateFile",
-                filename: "logs/mysql",
+                filename: "logs/database",
                 pattern: "yyyy-MM-dd.log",
                 ...optional,
                 numBackups: 30,
@@ -106,8 +106,8 @@ log4js.configure(
                 enableCallStack: true,
                 level: 'trace'
             },
-            mysql: {
-                appenders: ['console', 'mysql'],
+            sql: {
+                appenders: ['console', 'sql'],
                 enableCallStack: true,
                 level: 'trace'
             }
@@ -119,7 +119,7 @@ console.debug("Logger initialized");
 export const logger = log4js.getLogger('logger');
 export const api = log4js.getLogger('api');
 export const file = log4js.getLogger('file');
-export const mysql = log4js.getLogger('mysql');
+export const dbLogger = log4js.getLogger('sql');
 export const connectionLogger = log4js.connectLogger(log4js.getLogger('connection'),
     {
         level: 'auto',

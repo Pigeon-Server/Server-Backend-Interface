@@ -62,13 +62,13 @@ export class SyncRule extends Model<InferAttributes<SyncRule>, InferCreationAttr
     declare syncMode?: CreationOptional<string>;
 
     @Attribute(DataTypes.TEXT)
-    declare syncFiles?: string;
+    declare syncFiles?: string | string[];
 
     @Attribute(DataTypes.TEXT)
-    declare ignoreFile?: string;
+    declare ignoreFile?: string | string[];
 
     @Attribute(DataTypes.TEXT)
-    declare deleteFile?: string;
+    declare deleteFile?: string | string[];
 
     @Attribute({
         type: DataTypes.CHAR(32),

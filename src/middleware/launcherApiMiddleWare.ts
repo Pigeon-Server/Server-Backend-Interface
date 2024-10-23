@@ -3,9 +3,9 @@ import {Config} from "@/base/config";
 import {Request, Response, NextFunction} from "express";
 import {api} from "@/base/logger";
 import {getPlayerStatus} from "@/manager/apiManager";
-import {Database} from "@/base/mysql";
 import {accessSync, constants} from "fs";
 import {SyncFileManager} from "@/manager/syncFileManager";
+import {Database} from "@/database/database";
 
 export namespace LauncherApiMiddleWare {
     import serverConfig = Config.serverConfig;
@@ -43,7 +43,7 @@ export namespace LauncherApiMiddleWare {
             api.warn(`Access Denial: Account verification failed`);
             return;
         }
-        const result = await Database.instance.checkUserAccount(<PlayerLiteInfo>{
+        const result = await Database.checkUserAccount(<PlayerLiteInfo>{
             username,
             uuid,
             macAddress
@@ -53,8 +53,8 @@ export namespace LauncherApiMiddleWare {
             res.status(500).json({status: false, msg: "服务器内部出错,请联系管理员"});
             return;
         }
-        if (result.length === 1) {
-            Database.instance.updateTime(<PlayerUpdateInfo>{
+        if (result === null) {
+            Database.addUserAccount(<PlayerFullInfo>{
                 username,
                 uuid,
                 macAddress,
@@ -62,7 +62,7 @@ export namespace LauncherApiMiddleWare {
                 packName
             }).catch(err => api.error(err.message));
         } else {
-            Database.instance.addUserAccount(<PlayerFullInfo>{
+            Database.updateTime(<PlayerUpdateInfo>{
                 username,
                 uuid,
                 macAddress,
@@ -92,7 +92,7 @@ export namespace LauncherApiMiddleWare {
             res.status(403).json({status: false, msg: "无accessKey"});
             return;
         }
-        const response = await Database.instance.getKey(<PlayerGetKeyInfo>{
+        const response = await Database.getKey(<PlayerGetKeyInfo>{
             username,
             uuid,
             macAddress,
@@ -103,7 +103,7 @@ export namespace LauncherApiMiddleWare {
             res.status(500).json({status: false, msg: "服务器内部出错,请联系管理员"});
             return;
         }
-        if (response.length === 0 || response[0].accessKey !== accessKey) {
+        if (response === null || response.accessKey !== accessKey) {
             api.warn(`Access Denial: Invalid accessKey ${accessKey}`);
             res.status(438).json({status: false, msg: "accessKey无效"});
             return;

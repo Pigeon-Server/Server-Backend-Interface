@@ -11,10 +11,10 @@ import {Request, Response} from "express";
 import {Config} from "@/base/config";
 import {api, file} from "@/base/logger";
 import {EncryptUtils} from "@/utils/encryptUtils";
-import {Database} from "@/base/mysql";
 import {Utils} from "@/utils/utils";
 import {accessSync, constants} from "fs";
 import {SyncFileManager} from "@/manager/syncFileManager";
+import {Database} from "@/database/database";
 
 export namespace LauncherApiController {
     import updateConfig = Config.updateConfig;
@@ -56,7 +56,7 @@ export namespace LauncherApiController {
             uuid,
             packName
         } = req.body;
-        const result = await Database.instance.getKey(<PlayerGetKeyInfo>{
+        const result = await Database.createKey(<PlayerCreateKeyInfo>{
             username,
             uuid,
             macAddress,
@@ -70,16 +70,16 @@ export namespace LauncherApiController {
             } as Reply);
             return;
         }
-        if (result.length === 1) {
-            api.info(`Send key ${result[0].accessKey} for ${username}.`);
+        if (result !== null) {
+            api.info(`Send key ${result.accessKey} for ${username}.`);
             res.status(200).json({
                 status: true,
-                data: result[0].accessKey
+                data: result.accessKey
             } as Reply);
             return;
         }
         const key = generateKey();
-        Database.instance.setKey(<PlayerSetKeyInfo>{
+        Database.createKey(<PlayerCreateKeyInfo>{
             username,
             uuid,
             macAddress,

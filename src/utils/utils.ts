@@ -16,7 +16,7 @@ import {Config} from "@/base/config";
 import serverConfig = Config.serverConfig;
 import updateConfig = Config.updateConfig;
 import {DurationInputArg2} from "moment/moment";
-import {SyncConfigBaseData} from "@/type/database";
+import {SyncRule} from "@/database/model/syncRule";
 
 moment.tz.setDefault('Asia/Shanghai');
 
@@ -28,13 +28,12 @@ export namespace Utils {
         res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     }
 
-    export function getTime(later: boolean,
+    export function getDate(later: boolean,
                             lateTime: number = updateConfig.apikey.timeout,
-                            timeUnit: DurationInputArg2 = "seconds",
-                            timeFormat: string = "YYYY-MM-DD HH:mm:ss"): string {
+                            timeUnit: DurationInputArg2 = "seconds"): Date {
         if (later)
-            return moment().add(lateTime, timeUnit).format(timeFormat);
-        return moment().format(timeFormat);
+            return moment().add(lateTime, timeUnit).toDate();
+        return moment().toDate();
     }
 
     export function translateTime(time: string): number {
@@ -60,7 +59,10 @@ export namespace Utils {
         return stringRandom(32, {letters: true, numbers: false});
     }
 
-    export function translateStringToArray(data: SyncConfigBaseData[]) {
+    export function translateStringToArray(data: SyncRule | SyncRule[]) {
+        if (!Array.isArray(data)) {
+            data = [data];
+        }
         for (const datum of data) {
             if (datum.syncFiles) {
                 if (typeof datum.syncFiles === "string") {

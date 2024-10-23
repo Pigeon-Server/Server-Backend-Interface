@@ -14,8 +14,8 @@ import {FileUtils} from "@/utils/fileUtils";
 import {writeFileSync} from "fs";
 import {join} from "path";
 import lodash from "lodash";
-import {Database} from "@/base/mysql";
 import {Utils} from "@/utils/utils";
+import {Database} from "@/database/database";
 
 export namespace SyncFileManager {
     import syncConfig = Config.syncConfig;
@@ -183,11 +183,14 @@ export namespace SyncFileManager {
     }
 
     async function getStoredSyncConfig(excludeConfig: string[]) {
-        const data = await Database.instance.getAllSyncConfig();
+        const data = await Database.getAllSyncConfig();
         translateStringToArray(data);
         for (const datum of data) {
+            if (datum.configName === undefined) {
+                continue;
+            }
             excludeConfig.push(datum.configName);
-            if (datum.enable === 0) {
+            if (datum.enable) {
                 // config disable
                 // if it has stored in local file
                 // delete it
@@ -205,10 +208,13 @@ export namespace SyncFileManager {
                 }, {} as { [key: string]: null })
             } as SyncPackage;
             // select sync folders from database
-            const detail = await Database.instance.getSyncConfigDetail(datum.ruleId);
+            const detail = await Database.getSyncConfigDetail(datum.ruleId);
             if (detail.length !== 0) {
                 translateStringToArray(detail);
                 for (const re of detail) {
+                    if (re.clientPath === undefined) {
+                        continue;
+                    }
                     temp[re.clientPath] = {
                         mode: re.syncMode,
                         serverPath: re.serverPath,
@@ -220,7 +226,7 @@ export namespace SyncFileManager {
             const md5 = encryptMD5(JSON.stringify(temp));
             if (datum.md5 === undefined || datum.md5 !== md5) {
                 datum.md5 = md5;
-                await Database.instance.updateSyncConfigMd5(datum.ruleId, md5);
+                await Database.updateSyncConfigMd5(datum.ruleId, md5);
             }
             // syncConfig stored in syncConfigFile and has md5 record
             if (datum.configName in syncConfig &&

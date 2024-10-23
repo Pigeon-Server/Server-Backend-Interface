@@ -1,5 +1,4 @@
 import {Request, Response} from "express";
-import {Database} from "@/base/mysql";
 import {SyncFileManager} from "@/manager/syncFileManager";
 import {Utils} from "@/utils/utils";
 import {FileUtils} from "@/utils/fileUtils";
@@ -7,6 +6,7 @@ import {join} from "path";
 import {Config} from "@/base/config";
 import {readFileSync, rmSync, statSync, unlinkSync, writeFileSync} from "fs";
 import {logger} from "@/base/logger";
+import {Database} from "@/database/database";
 
 export namespace FrontendApiController {
     import reloadSyncConfig = SyncFileManager.reloadSyncConfig;
@@ -57,33 +57,34 @@ export namespace FrontendApiController {
 
     export const getRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
-        const root = await Database.instance.getSyncConfigRoot(ruleId);
-        if (root.length === 0) {
+        const root = await Database.getSyncConfigRoot(ruleId);
+        if (root === null) {
             res.status(404).json({
                 status: false,
                 msg: `无法找到Id为${ruleId}的同步规则`
             } as Reply);
             return
         }
-        const data = await Database.instance.getSyncConfigDetail(ruleId);
+        const data = await Database.getSyncConfigDetail(ruleId);
         translateStringToArray(root);
         translateStringToArray(data);
         const rule: RuleDetails = {
-            basePath: root[0].serverPath,
-            ruleName: root[0].configName,
+            basePath: root.serverPath,
+            ruleName: root.configName || "",
             deleteId: [],
             updateRules: {
-                file: (<string[]>root[0].syncFiles).reduce((arr, data) => {
+                file: (<string[]>root.syncFiles).reduce((arr, data) => {
                     arr.push({
                         ruleName: "",
                         clientPath: data
                     } as RuleFile);
+
                     return arr;
                 }, [] as RuleFile[]),
                 folder: data.reduce((arr, data) => {
                     arr.push({
                         subId: data.id,
-                        ruleName: data.ruleName || "",
+                        ruleName: data.configName || "",
                         clientPath: data.clientPath,
                         serverPath: data.serverPath,
                         mode: data.syncMode,
@@ -102,10 +103,10 @@ export namespace FrontendApiController {
 
     export const addRule = async (req: Request, res: Response) => {
         const {basePath, ruleName, updateRules} = <RuleDetails>req.body;
-        const ruleId = (await Database.instance.getAvailableRuleId())[0].ruleId + 1;
-        await Database.instance.insertSyncConfigRoot(ruleId, basePath, ruleName, updateRules.file);
+        const ruleId = await Database.getAvailableRuleId();
+        await Database.insertSyncConfigRoot(ruleId, basePath, ruleName, updateRules.file);
         for (const folder of updateRules.folder) {
-            await Database.instance.insertSyncConfigFolder({
+            await Database.insertSyncConfigFolder({
                 clientPath: folder.clientPath,
                 delete: (<string>folder.delete).replaceAll("\n", ","),
                 ignore: (<string>folder.ignore).replaceAll("\n", ","),
@@ -123,7 +124,7 @@ export namespace FrontendApiController {
 
     export const deleteRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
-        await Database.instance.deleteSyncConfig(ruleId);
+        await Database.deleteSyncConfig(ruleId);
         res.status(200).json({
             status: true,
             data: ruleId
@@ -133,13 +134,13 @@ export namespace FrontendApiController {
     export const updateRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
         const {basePath, ruleName, updateRules, deleteId} = <RuleDetails>req.body;
-        await Database.instance.updateSyncConfigRoot(ruleId, basePath, ruleName, updateRules.file);
+        await Database.updateSyncConfigRoot(ruleId, basePath, ruleName, updateRules.file);
         if (deleteId.length > 0) {
-            await Database.instance.deleteSyncConfigFolder(ruleId, deleteId.map(id => Number(id)));
+            await Database.deleteSyncConfigFolder(ruleId, deleteId.map(id => Number(id)));
         }
         for (const folder of updateRules.folder) {
             if (folder.subId) {
-                await Database.instance.updateSyncConfigFolder({
+                await Database.updateSyncConfigFolder({
                     clientPath: folder.clientPath,
                     delete: (<string>folder.delete).replaceAll("\n", ","),
                     ignore: (<string>folder.ignore).replaceAll("\n", ","),
@@ -151,7 +152,7 @@ export namespace FrontendApiController {
                 });
                 continue;
             }
-            await Database.instance.insertSyncConfigFolder({
+            await Database.insertSyncConfigFolder({
                 clientPath: folder.clientPath,
                 delete: (<string>folder.delete).replaceAll("\n", ","),
                 ignore: (<string>folder.ignore).replaceAll("\n", ","),
@@ -168,7 +169,7 @@ export namespace FrontendApiController {
 
     export const enableRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
-        await Database.instance.enableSyncConfig(ruleId);
+        await Database.enableSyncConfig(ruleId);
         res.status(200).json({
             status: true,
             data: ruleId
@@ -177,7 +178,7 @@ export namespace FrontendApiController {
 
     export const disableRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
-        await Database.instance.disableSyncConfig(ruleId);
+        await Database.disableSyncConfig(ruleId);
         res.status(200).json({
             status: true,
             data: ruleId
@@ -193,7 +194,7 @@ export namespace FrontendApiController {
             } as Reply);
             return;
         }
-        const data = await Database.instance.getSyncConfigPage(
+        const data = await Database.getSyncConfigPage(
             pageSize * (currentPage - 1) + 1,
             pageSize * currentPage,
             search);

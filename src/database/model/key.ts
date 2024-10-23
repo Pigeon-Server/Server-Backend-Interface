@@ -1,4 +1,10 @@
-import {CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model} from "@sequelize/core";
+import {
+    CreationOptional,
+    DataTypes,
+    InferAttributes,
+    InferCreationAttributes,
+    Model
+} from "@sequelize/core";
 import {
     Attribute,
     AutoIncrement,

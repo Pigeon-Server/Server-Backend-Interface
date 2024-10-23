@@ -14,7 +14,7 @@ import {logger} from "@/base/logger";
 import {Config} from "@/base/config";
 import updateConfig = Config.updateConfig;
 import {Utils} from "@/utils/utils";
-import getTime = Utils.getTime;
+import getDate = Utils.getDate;
 
 axios_.defaults.baseURL = "https://skin.pigeon-server.cn";
 
@@ -41,14 +41,14 @@ enum AccountStatus {
  * @export
  */
 
-let nextClear = getTime(true, updateConfig.apikey.clearInterval, "milliseconds");
+let nextClear = getDate(true, updateConfig.apikey.clearInterval, "milliseconds");
 export const getNextClearTime = () => {
     return nextClear;
 };
 logger.debug("Time of next cache clearing: " + nextClear);
 
 export function clearApiCache() {
-    nextClear = getTime(true, updateConfig.apikey.clearInterval, "milliseconds");
+    nextClear = getDate(true, updateConfig.apikey.clearInterval, "milliseconds");
     accountCacheMap.clear();
     logger.debug("Clear Api Cache.");
     logger.debug("Time of next cache clearing: " + nextClear);
