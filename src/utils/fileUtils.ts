@@ -7,11 +7,10 @@
  * @date 2024.03.03
  * @license GNU General Public License (GPL)
  **********************************************/
-import {accessSync, constants, writeFileSync, mkdirSync, readdirSync, statSync, WriteFileOptions} from "fs";
+import {accessSync, constants, mkdirSync, readdirSync, statSync, WriteFileOptions, writeFileSync} from "fs";
 import {join, relative} from "path";
 import {EncryptUtils} from "./encryptUtils";
 import moment from "moment-timezone";
-import {first} from "lodash";
 
 /**
  * @namespace FileUtils

@@ -7,13 +7,13 @@
  * @date 2024.03.03
  * @license GNU General Public License (GPL)
  **********************************************/
+import type {AxiosRequestConfig, AxiosStatic} from "axios";
 import axios_ from "axios";
-import type {AxiosStatic, AxiosRequestConfig} from "axios";
 import type {Response} from "express";
 import {logger} from "@/base/logger";
 import {Config} from "@/base/config";
-import updateConfig = Config.updateConfig;
 import {Utils} from "@/utils/utils";
+import updateConfig = Config.updateConfig;
 import getDate = Utils.getDate;
 
 axios_.defaults.baseURL = "https://skin.pigeon-server.cn";

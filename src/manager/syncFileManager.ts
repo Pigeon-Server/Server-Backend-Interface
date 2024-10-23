@@ -190,7 +190,7 @@ export namespace SyncFileManager {
                 continue;
             }
             excludeConfig.push(datum.configName);
-            if (datum.enable) {
+            if (!datum.enable) {
                 // config disable
                 // if it has stored in local file
                 // delete it

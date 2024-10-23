@@ -5,7 +5,6 @@ import {Config} from "@/base/config";
 
 export namespace FrontendApiMiddleWare {
     import serverConfig = Config.serverConfig;
-    import updateConfig = Config.updateConfig;
     const tracker = new Tracker(serverConfig.callLimit.count, serverConfig.callLimit.time);
 
     export const checkCallLimit = (req: Request, res: Response, next: NextFunction) => {

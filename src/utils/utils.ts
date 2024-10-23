@@ -9,14 +9,13 @@
  **********************************************/
 import type {Response} from "express";
 import moment from "moment-timezone";
-import {logger} from "@/base/logger";
 
 import stringRandom from 'string-random';
 import {Config} from "@/base/config";
-import serverConfig = Config.serverConfig;
-import updateConfig = Config.updateConfig;
 import {DurationInputArg2} from "moment/moment";
 import {SyncRule} from "@/database/model/syncRule";
+import serverConfig = Config.serverConfig;
+import updateConfig = Config.updateConfig;
 
 moment.tz.setDefault('Asia/Shanghai');
 

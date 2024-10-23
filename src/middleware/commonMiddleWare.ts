@@ -1,6 +1,6 @@
 import {logger} from "@/base/logger";
 import {Utils} from "@/utils/utils";
-import {Request, Response, NextFunction} from "express";
+import {NextFunction, Request, Response} from "express";
 
 export namespace CommonMiddleWare {
     import enableHSTS = Utils.enableHSTS;

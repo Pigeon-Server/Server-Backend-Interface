@@ -1,13 +1,11 @@
 import path from "path";
 import alias from "module-alias";
-
 alias(path.resolve(__dirname, "../"));
 
 import {connectionLogger, logger} from "@/base/logger";
 import {SyncFileManager} from "@/manager/syncFileManager";
-import express from "express";
+import express, {Request, Response} from "express";
 import cors from 'cors';
-import {Response, Request} from "express";
 import process from "node:process";
 import fs from "fs";
 import https from "https";
@@ -22,6 +20,7 @@ import {frontendApiRouter} from "@/router/frontendApi";
 import {oauthApiRouter} from "@/router/oauthApi";
 import {authApiRouter} from "@/router/authApi";
 import {serverApiRouter} from "@/router/serverApi";
+
 import initDatabase = Database.initDatabase;
 import serverConfig = Config.serverConfig;
 import checkFileExist = FileUtils.checkFileExist;

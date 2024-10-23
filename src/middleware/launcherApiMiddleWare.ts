@@ -1,6 +1,6 @@
 import {Tracker} from "@/manager/trackerManager";
 import {Config} from "@/base/config";
-import {Request, Response, NextFunction} from "express";
+import {NextFunction, Request, Response} from "express";
 import {api} from "@/base/logger";
 import {getPlayerStatus} from "@/manager/apiManager";
 import {accessSync, constants} from "fs";
