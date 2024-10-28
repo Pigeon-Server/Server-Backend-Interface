@@ -54,11 +54,25 @@ type FileInfo = {
     editTime?: string
 }
 
-
 type AuthInfo = {
     username: string,
     permission: number,
     tokenExpiresIn: number,
     token: string,
     refreshToken: string
+}
+
+type PerformanceData = {
+    time: string[],
+    cpu: number[],
+    memory: number[],
+    disk: number[],
+    load1: number[],
+    load5: number[],
+    load15: number[]
+}
+
+type CompressFile = {
+    path: string,
+    isFile: boolean
 }

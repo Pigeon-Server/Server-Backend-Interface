@@ -12,12 +12,3 @@ type JwtData = {
     sub: string
 };
 
-type PerformanceData = {
-    time: string[],
-    cpu: number[],
-    memory: number[],
-    disk: number[],
-    load1: number[],
-    load5: number[],
-    load15: number[]
-}

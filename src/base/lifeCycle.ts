@@ -3,10 +3,9 @@ import {logger} from "@/base/logger";
 import log4js from "log4js";
 
 export enum ServerLifeCycleEvent {
+    ServerStarted,
     ServerDatabaseInit,
-    ServerExit,
-    ServerExitNormal,
-    ServerExitAbnormal
+    ServerExit
 }
 
 export class ServerLifeCycle {
@@ -30,10 +29,8 @@ export class ServerLifeCycle {
         process.on('exit', (code) => {
             this.emitEvent(ServerLifeCycleEvent.ServerExit);
             if (code === 0) {
-                this.emitEvent(ServerLifeCycleEvent.ServerExitNormal);
                 logger.info(`About to exit with code: ${code}`);
             } else {
-                this.emitEvent(ServerLifeCycleEvent.ServerExitAbnormal);
                 logger.error(`About to exit with code: ${code}`);
             }
             log4js.shutdown();

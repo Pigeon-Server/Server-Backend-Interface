@@ -13,6 +13,7 @@ import type {Response} from "express";
 import {logger} from "@/base/logger";
 import {Config} from "@/base/config";
 import {Utils} from "@/utils/utils";
+import {ServerLifeCycle, ServerLifeCycleEvent} from "@/base/lifeCycle";
 import updateConfig = Config.updateConfig;
 import getDate = Utils.getDate;
 import TimeOperation = Utils.TimeOperation;
@@ -55,7 +56,15 @@ export function clearApiCache() {
     logger.debug("Time of next cache clearing: " + nextClear);
 }
 
-setInterval(clearApiCache, updateConfig.apikey.clearInterval);
+let timer: NodeJS.Timeout | undefined;
+
+ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerStarted, () => {
+    timer = setInterval(clearApiCache, updateConfig.apikey.clearInterval);
+});
+
+ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerExit, () => {
+    clearInterval(timer);
+});
 
 /**
  * @field

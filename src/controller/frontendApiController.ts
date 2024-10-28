@@ -4,10 +4,13 @@ import {Utils} from "@/utils/utils";
 import {FileUtils} from "@/utils/fileUtils";
 import {join} from "path";
 import {Config} from "@/base/config";
-import {readFileSync, rmSync, statSync, unlinkSync, writeFileSync} from "fs";
+import {readFileSync, rmSync, statSync, writeFileSync} from "fs";
 import {logger} from "@/base/logger";
 import {Database} from "@/database/database";
 import {cp, rename} from "fs/promises";
+import {createWriteStream} from "fs";
+import archiver from "archiver";
+import AdmZip from "adm-zip";
 
 export namespace FrontendApiController {
     import reloadSyncConfig = SyncFileManager.reloadSyncConfig;
@@ -321,5 +324,73 @@ export namespace FrontendApiController {
     export const copyFolder = async (req: Request, res: Response) => {
         await fileOperation(req, res, FileOperation.DIR_COPY,
             (sourcePath, destPath) => cp(sourcePath, destPath, {recursive: true}));
+    };
+
+    export const downloadFile = async (req: Request, res: Response) => {
+        const path = preprocessingPath(req);
+        if (checkFileExist(path)) {
+            res.download(path);
+            return;
+        }
+        res.status(404).json({
+            status: false,
+            msg: "文件不存在"
+        } as Reply);
+    };
+
+    export const uploadFile = async (req: Request, res: Response) => {
+        const path = preprocessingPath(req);
+        const file = req.file;
+        if (file === undefined) {
+            res.status(400).json({
+                status: false,
+                msg: 'No file upload'
+            } as Reply);
+            return;
+        }
+        await rename(file.path, path.endsWith(file.originalname) ? path : join(path, file.originalname));
+        res.status(200).json({
+            status: true,
+            msg: 'File uploaded successfully'
+        } as Reply);
+    };
+
+    export const compression = async (req: Request, res: Response) => {
+        let {fileList, compressFileName} = req.body;
+        compressFileName = checkPath(compressFileName);
+        res.status(200).json({
+            status: true,
+            msg: `压缩任务已提交，压缩可能需要一点时间`
+        } as Reply);
+        const output = createWriteStream(compressFileName, {encoding: 'utf8'});
+        const archive = archiver('zip', {zlib: {level: 9}});
+        archive.on('warning', (err) => logger.warn(err));
+        archive.on('error', (err) => logger.error(err));
+        output.on('close', () => logger.info(`Create zip file finish, path: ${compressFileName}, size: ${archive.pointer()} bytes`));
+        archive.pipe(output);
+        (fileList as CompressFile[]).forEach((file) => {
+            if (file.isFile) {
+                archive.file(file.path, {name: file.path.substring(file.path.lastIndexOf("\\") + 1)})
+            } else {
+                archive.directory(file.path, file.path.substring(file.path.lastIndexOf("\\") + 1));
+            }
+        });
+        await archive.finalize();
+    };
+
+    export const decompression = async (req: Request, res: Response) => {
+        let {compressFileName, targetFolder} = req.body;
+        compressFileName = checkPath(compressFileName);
+        targetFolder = checkPath(targetFolder);
+        res.status(200).json({
+            status: true,
+            msg: `解压缩任务已提交, 解压可能需要一点时间`
+        } as Reply);
+        try {
+            const zip = new AdmZip(compressFileName);
+            zip.extractAllTo(targetFolder, true);
+        } catch (err) {
+            logger.error(err);
+        }
     };
 }

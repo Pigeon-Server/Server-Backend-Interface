@@ -1,13 +1,12 @@
 import path from "path";
 import alias from "module-alias";
-
 alias(path.resolve(__dirname, "../"));
 
 import {connectionLogger, logger} from "@/base/logger";
 import express, {Request, Response} from "express";
 import cors from 'cors';
 import process from "node:process";
-import fs from "fs";
+import fs, { rm } from "fs";
 import https from "https";
 import http from "http";
 import {Config} from "@/base/config";
@@ -87,3 +86,5 @@ if (serverConfig.https.enable) {
     http.createServer(app).listen(port);
     logger.info(`Server running at http://0.0.0.0${port === 80 ? "" : ":" + port}/`);
 }
+
+ServerLifeCycle.emitEvent(ServerLifeCycleEvent.ServerStarted);
