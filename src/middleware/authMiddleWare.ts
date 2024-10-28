@@ -1,4 +1,4 @@
-import {Tracker} from "@/manager/trackerManager";
+import {Tracker} from "@/module/tracker";
 import {NextFunction, Request, Response} from "express";
 import {api} from "@/base/logger";
 import {Config} from "@/base/config";
@@ -75,5 +75,27 @@ export namespace AuthMiddleware {
             res.locals.JWTData = data;
             next();
         });
+    };
+
+    export const requestAdmin = (_: Request, res: Response, next: NextFunction) => {
+        const data = res.locals.JWTData as JwtData;
+        if (data.permission < 1) {
+            res.status(403).json({
+                status: false,
+                msg: "Your permissions are not sufficient to view this entry"
+            } as Reply);
+        }
+        next();
+    };
+
+    export const requestSuperAdmin = (_: Request, res: Response, next: NextFunction) => {
+        const data = res.locals.JWTData as JwtData;
+        if (data.permission < 2) {
+            res.status(403).json({
+                status: false,
+                msg: "Your permissions are not sufficient to view this entry"
+            } as Reply);
+        }
+        next();
     }
 }

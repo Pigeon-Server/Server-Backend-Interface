@@ -20,6 +20,13 @@ import updateConfig = Config.updateConfig;
 moment.tz.setDefault('Asia/Shanghai');
 
 export namespace Utils {
+
+    export enum TimeOperation {
+        None,
+        Later,
+        Early
+    }
+
     export function enableHSTS(res: Response): void {
         if (!serverConfig.https.enable || !serverConfig.https.enableHSTS) {
             return
@@ -27,12 +34,17 @@ export namespace Utils {
         res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     }
 
-    export function getDate(later: boolean,
-                            lateTime: number = updateConfig.apikey.timeout,
+    export function getDate(operation: TimeOperation,
+                            time: number = updateConfig.apikey.timeout,
                             timeUnit: DurationInputArg2 = "seconds"): Date {
-        if (later)
-            return moment().add(lateTime, timeUnit).toDate();
-        return moment().toDate();
+        switch (operation) {
+            case TimeOperation.None:
+                return moment().toDate();
+            case Utils.TimeOperation.Later:
+                return moment().add(time, timeUnit).toDate();
+            case Utils.TimeOperation.Early:
+                return moment().subtract(time, timeUnit).toDate();
+        }
     }
 
     export function translateTime(time: string): number {
@@ -85,5 +97,9 @@ export namespace Utils {
                 datum.deleteFile = [];
             }
         }
+    }
+
+    export function sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }

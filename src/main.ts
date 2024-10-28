@@ -1,9 +1,9 @@
 import path from "path";
 import alias from "module-alias";
+
 alias(path.resolve(__dirname, "../"));
 
 import {connectionLogger, logger} from "@/base/logger";
-import {SyncFileManager} from "@/manager/syncFileManager";
 import express, {Request, Response} from "express";
 import cors from 'cors';
 import process from "node:process";
@@ -20,13 +20,23 @@ import {frontendApiRouter} from "@/router/frontendApi";
 import {oauthApiRouter} from "@/router/oauthApi";
 import {authApiRouter} from "@/router/authApi";
 import {serverApiRouter} from "@/router/serverApi";
+import {ServerLifeCycle, ServerLifeCycleEvent} from "@/base/lifeCycle";
+import {SyncFileManager} from "@/module/syncFileManager";
+import {PropertyMonitor} from "@/module/propertyMonitor";
 
 import initDatabase = Database.initDatabase;
 import serverConfig = Config.serverConfig;
 import checkFileExist = FileUtils.checkFileExist;
 
+ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerDatabaseInit, SyncFileManager.checkSyncCache);
+
 initCatcher();
-initDatabase(SyncFileManager.checkSyncCache);
+initDatabase();
+
+if (serverConfig.monitor.enable) {
+    logger.info(`Server monitor enable, initializing...`);
+    PropertyMonitor.initMonitor();
+}
 
 const app = express();
 

@@ -9,7 +9,10 @@ import {SyncRule} from "@/database/model/syncRule";
 import process from "node:process";
 import {Utils} from "@/utils/utils";
 import {join as _join} from "lodash";
+import {ServerLifeCycle, ServerLifeCycleEvent} from "@/base/lifeCycle";
+import {Performance} from "@/database/model/performance";
 import databaseConfig = Config.databaseConfig;
+import TimeOperation = Utils.TimeOperation;
 
 export namespace Database {
     import getDate = Utils.getDate;
@@ -22,10 +25,10 @@ export namespace Database {
         logging: (sql: string) => {
             dbLogger.debug(sql);
         },
-        models: [User, AccessKey, Account, SyncRule]
+        models: [User, AccessKey, Account, SyncRule, Performance]
     });
 
-    export function initDatabase(callback?: Callback) {
+    export function initDatabase() {
         database.authenticate().then(() => {
             dbLogger.info("Connect to database successfully.");
             database.sync().then(() => {
@@ -35,9 +38,7 @@ export namespace Database {
                     `AND UNIX_TIMESTAMP(expirationTime) + ${String(databaseConfig.updateTime)} <UNIX_TIMESTAMP(now());;`)
                     .then(() => {
                         dbLogger.info(`Database initialized.`);
-                        if (callback) {
-                            callback();
-                        }
+                        ServerLifeCycle.emitEvent(ServerLifeCycleEvent.ServerDatabaseInit);
                     }).catch(err => {
                     dbLogger.error(`Database event init error!`);
                     dbLogger.error(err.message);
@@ -115,7 +116,7 @@ export namespace Database {
             pack: info.packName,
             accessKey: info.key,
             enable: true,
-            expirationTime: getDate(true)
+            expirationTime: getDate(TimeOperation.Later)
         });
     }
 

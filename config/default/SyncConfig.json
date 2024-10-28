@@ -1,16 +1,16 @@
 {
-  "[Pigeon Server]FTB-Interactions": {
-    "basePath": "source/test"
-  },
-  "ignoredKey": [
-    "init",
-    "data",
-    "files",
-    "basePath",
-    "md5",
-    "ignoredKey"
-  ],
-  "md5": {
-    "[Pigeon Server]FTB-Interactions": "a6c9b964bf9ba71f3fd1128507893a04"
-  }
+    "[Pigeon Server]FTB-Interactions": {
+        "basePath": "source/test"
+    },
+    "ignoredKey": [
+        "init",
+        "data",
+        "files",
+        "basePath",
+        "md5",
+        "ignoredKey"
+    ],
+    "md5": {
+        "[Pigeon Server]FTB-Interactions": "a6c9b964bf9ba71f3fd1128507893a04"
+    }
 }

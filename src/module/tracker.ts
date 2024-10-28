@@ -1,5 +1,5 @@
 /**********************************************
- * @file trackerManager.ts
+ * @file tracker.ts
  * @desc API访问限制器
  * @author Half_nothing
  * @email Half_nothing@163.com

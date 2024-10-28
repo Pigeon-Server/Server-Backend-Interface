@@ -1,4 +1,10 @@
-import {CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model} from "@sequelize/core";
+import {
+    CreationOptional,
+    DataTypes,
+    InferAttributes,
+    InferCreationAttributes,
+    Model
+} from "@sequelize/core";
 import {
     Attribute,
     AutoIncrement,
@@ -18,6 +24,7 @@ export class AccessKey extends Model<InferAttributes<AccessKey>, InferCreationAt
     @PrimaryKey
     @AutoIncrement
     @Unique
+    @NotNull
     declare id?: CreationOptional<number>;
 
     @Attribute(DataTypes.CHAR(16))

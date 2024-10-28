@@ -18,16 +18,19 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     @PrimaryKey
     @AutoIncrement
     @Unique
+    @NotNull
     declare id?: CreationOptional<number>;
 
     @Attribute(DataTypes.CHAR(16))
     @PrimaryKey
     @Unique('info')
+    @NotNull
     declare username: string;
 
     @Attribute(DataTypes.CHAR(32))
     @PrimaryKey
     @Unique('info')
+    @NotNull
     declare uuid: string;
 
     @Attribute(DataTypes.CHAR(20))

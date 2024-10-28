@@ -1,10 +1,10 @@
-import {Tracker} from "@/manager/trackerManager";
+import {Tracker} from "@/module/tracker";
 import {Config} from "@/base/config";
 import {NextFunction, Request, Response} from "express";
 import {api} from "@/base/logger";
-import {getPlayerStatus} from "@/manager/apiManager";
+import {getPlayerStatus} from "@/module/apiManager";
 import {accessSync, constants} from "fs";
-import {SyncFileManager} from "@/manager/syncFileManager";
+import {SyncFileManager} from "@/module/syncFileManager";
 import {Database} from "@/database/database";
 
 export namespace LauncherApiMiddleWare {

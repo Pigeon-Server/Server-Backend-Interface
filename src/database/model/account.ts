@@ -8,10 +8,12 @@ export class Account extends Model<InferAttributes<Account>, InferCreationAttrib
     @Attribute(DataTypes.INTEGER)
     @PrimaryKey
     @AutoIncrement
+    @NotNull
     declare id?: CreationOptional<number>;
 
     @Attribute(DataTypes.STRING(32))
     @PrimaryKey
+    @NotNull
     declare username: string;
 
     @Attribute(DataTypes.STRING(64))

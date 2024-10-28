@@ -1,4 +1,4 @@
-import {Tracker} from "@/manager/trackerManager";
+import {Tracker} from "@/module/tracker";
 import {NextFunction, Request, Response} from "express";
 import {api} from "@/base/logger";
 import {Config} from "@/base/config";

@@ -9,6 +9,10 @@ serverApiRouter.use(ServerApiMiddleware.checkCallLimit);
 
 serverApiRouter.use(AuthMiddleware.verifyJWTToken);
 
-serverApiRouter.get("/status", ServerApiController.getServerStatusHandler);
+serverApiRouter.use(AuthMiddleware.requestAdmin);
+
+serverApiRouter.post("/status", ServerApiController.getServerStatusHandler);
+
+serverApiRouter.use(AuthMiddleware.requestSuperAdmin);
 
 serverApiRouter.put("/cache/clear", ServerApiController.clearCacheHandler);

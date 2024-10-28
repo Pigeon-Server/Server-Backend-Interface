@@ -13,7 +13,7 @@ import {api, file} from "@/base/logger";
 import {EncryptUtils} from "@/utils/encryptUtils";
 import {Utils} from "@/utils/utils";
 import {accessSync, constants} from "fs";
-import {SyncFileManager} from "@/manager/syncFileManager";
+import {SyncFileManager} from "@/module/syncFileManager";
 import {Database} from "@/database/database";
 
 export namespace LauncherApiController {

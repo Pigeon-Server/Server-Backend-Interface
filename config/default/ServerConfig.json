@@ -1,23 +1,28 @@
 {
-  "https": {
-    "enable": false,
-    "enableHSTS": false,
-    "keyPath": "certificate/certificate.key",
-    "crtPath": "certificate/certificate.crt"
-  },
-  "cookie": {
-    "key": "123456",
-    "timeout": 1200000
-  },
-  "callLimit": {
-    "count": 100,
-    "time": 1000
-  },
-  "homePage": "https://www.baidu.com",
-  "jwt": {
-    "secretKey": "",
-    "expiresIn": "",
-    "refreshTokenExpiresIn": ""
-  },
-  "port": 80
+    "https": {
+        "enable": false,
+        "enableHSTS": false,
+        "keyPath": "certificate/certificate.key",
+        "crtPath": "certificate/certificate.crt"
+    },
+    "cookie": {
+        "key": "123456",
+        "timeout": 1200000
+    },
+    "callLimit": {
+        "count": 100,
+        "time": 1000
+    },
+    "jwt": {
+        "secretKey": "123456",
+        "expiresIn": "1h",
+        "refreshTokenExpiresIn": "1d"
+    },
+    "monitor": {
+        "enable": false,
+        "recordInterval": "5m",
+        "retentionDays": "30d"
+    },
+    "homePage": "https://www.baidu.com",
+    "port": 80
 }

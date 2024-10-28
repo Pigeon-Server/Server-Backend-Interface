@@ -18,11 +18,13 @@ export class SyncRule extends Model<InferAttributes<SyncRule>, InferCreationAttr
     @PrimaryKey
     @AutoIncrement
     @Index("index")
+    @NotNull
     declare id?: CreationOptional<number>;
 
     @Attribute(DataTypes.INTEGER)
     @PrimaryKey
     @Index("index")
+    @NotNull
     declare ruleId: number;
 
     @Attribute({

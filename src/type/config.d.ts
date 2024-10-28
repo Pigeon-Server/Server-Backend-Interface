@@ -90,6 +90,11 @@ type ServerConfig = {
         expiresIn: string,
         refreshTokenExpiresIn: string
     },
+    monitor: {
+        enable: boolean,
+        recordInterval: string,
+        retentionDays: string
+    }
     homePage: string,
     port: number
 }

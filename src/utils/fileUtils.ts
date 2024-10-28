@@ -7,7 +7,7 @@
  * @date 2024.03.03
  * @license GNU General Public License (GPL)
  **********************************************/
-import {accessSync, constants, mkdirSync, readdirSync, statSync, WriteFileOptions, writeFileSync} from "fs";
+import fs, {accessSync, constants, mkdirSync, readdirSync, statSync, WriteFileOptions, writeFileSync} from "fs";
 import {join, relative} from "path";
 import {EncryptUtils} from "./encryptUtils";
 import moment from "moment-timezone";
@@ -18,6 +18,21 @@ import moment from "moment-timezone";
  * @export
  */
 export namespace FileUtils {
+
+    export enum FileOperation {
+        FILE_RENAME,
+        FILE_MOVE,
+        FILE_COPY,
+        DIR_RENAME,
+        DIR_MOVE,
+        DIR_COPY
+    }
+
+    export enum CheckResult {
+        PASSED,
+        SOURCE_NOT_FOUND,
+        DEST_EXIST
+    }
 
     import encryptFile = EncryptUtils.encryptFile;
     import encryptMD5 = EncryptUtils.encryptMD5;
@@ -39,7 +54,11 @@ export namespace FileUtils {
     export function checkDirExist(path: string, createDir: boolean = false, callback?: Runnable<boolean>): void | boolean {
         try {
             accessSync(path, constants.F_OK);
-            return callback ? callback(true) : true;
+            const stat = statSync(path);
+            if (stat.isDirectory()) {
+                return callback ? callback(true) : true;
+            }
+            return callback ? callback(false) : false;
         } catch (_) {
             if (createDir) {
                 mkdirSync(path, {recursive: true});
@@ -69,7 +88,11 @@ export namespace FileUtils {
                                    options: WriteFileOptions = 'utf-8', callback?: Runnable<boolean>): void | boolean {
         try {
             accessSync(path, constants.F_OK);
-            return callback ? callback(true) : true;
+            const stat = statSync(path);
+            if (stat.isFile()) {
+                return callback ? callback(true) : true;
+            }
+            return callback ? callback(false) : false;
         } catch (_) {
             if (createFile) {
                 writeFileSync(path, data, options);
@@ -153,5 +176,31 @@ export namespace FileUtils {
             return a.isFile ? 1 : -1;
         });
         return tree;
+    }
+
+    export function checkFileOperation(operation: FileOperation, sourcePath: string, destPath: string): CheckResult {
+        switch (operation) {
+            case FileOperation.FILE_RENAME:
+            case FileOperation.FILE_MOVE:
+            case FileOperation.FILE_COPY:
+                if (checkFileExist(destPath)) {
+                    return CheckResult.DEST_EXIST;
+                }
+                if (!checkFileExist(sourcePath)) {
+                    return CheckResult.SOURCE_NOT_FOUND;
+                }
+                break;
+            case FileOperation.DIR_RENAME:
+            case FileOperation.DIR_MOVE:
+            case FileOperation.DIR_COPY:
+                if (checkDirExist(destPath)) {
+                    return CheckResult.DEST_EXIST;
+                }
+                if (!checkDirExist(sourcePath)) {
+                    return CheckResult.SOURCE_NOT_FOUND;
+                }
+                break
+        }
+        return CheckResult.PASSED;
     }
 }
