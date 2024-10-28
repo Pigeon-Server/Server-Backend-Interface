@@ -7,9 +7,7 @@ import {Config} from "@/base/config";
 import {readFileSync, rmSync, statSync, unlinkSync, writeFileSync} from "fs";
 import {logger} from "@/base/logger";
 import {Database} from "@/database/database";
-import {rename} from "fs/promises";
-import FileOperation = FileUtils.FileOperation;
-import CheckResult = FileUtils.CheckResult;
+import {cp, rename} from "fs/promises";
 
 export namespace FrontendApiController {
     import reloadSyncConfig = SyncFileManager.reloadSyncConfig;
@@ -18,28 +16,50 @@ export namespace FrontendApiController {
     import checkDirExist = FileUtils.checkDirExist;
     import checkFileExist = FileUtils.checkFileExist;
     import checkFileOperation = FileUtils.checkFileOperation;
+    import FileOperation = FileUtils.FileOperation;
+    import CheckResult = FileUtils.CheckResult;
 
-    const preprocessingPath = (req: Request) => {
-        return req.params.path.startsWith(updateConfig.fileBasePath) ? req.params.path : join(updateConfig.fileBasePath, req.params.path);
+    const checkPath = (path: string) => {
+        return path.startsWith(updateConfig.fileBasePath) ? path : join(updateConfig.fileBasePath, path);
     };
 
-    const checkExists = (res: Response, path: string) => {
-        const stat = statSync(path);
-        if (stat.isDirectory()) {
+    const preprocessingPath = (req: Request) => {
+        return checkPath(req.params.path);
+    };
+
+    const fileOperation = async (req: Request, res: Response, operation: FileOperation,
+                                 successCallback: (sourcePath: string, destPath: string) => Promise<void>) => {
+        let {sourcePath, destPath} = req.body;
+        if ([sourcePath, destPath].includes(undefined)) {
             res.status(400).json({
                 status: false,
-                msg: "已经存在同名文件夹"
+                msg: "缺少查询参数"
             } as Reply);
-            return true;
+            return;
         }
-        if (stat.isFile()) {
-            res.status(400).json({
-                status: false,
-                msg: "已经存在同名文件"
-            } as Reply);
-            return true;
+        sourcePath = checkPath(sourcePath);
+        destPath = checkPath(destPath);
+        const checkResult = checkFileOperation(operation, sourcePath, destPath);
+        switch (checkResult) {
+            case CheckResult.PASSED:
+                await successCallback(sourcePath, destPath);
+                res.status(200).json({
+                    status: true
+                } as Reply);
+                break;
+            case CheckResult.DEST_EXIST:
+                res.status(400).json({
+                    status: false,
+                    msg: "存在同名文件"
+                } as Reply);
+                break;
+            case CheckResult.SOURCE_NOT_FOUND:
+                res.status(404).json({
+                    status: false,
+                    msg: "无法找到指定文件"
+                } as Reply);
+                break;
         }
-        return false
     };
 
     export const reloadRules = async (_: Request, res: Response) => {
@@ -242,7 +262,7 @@ export namespace FrontendApiController {
     export const deleteFile = async (req: Request, res: Response) => {
         const path = preprocessingPath(req);
         try {
-            unlinkSync(path);
+            rmSync(path);
             res.status(200).json({status: true} as Reply);
         } catch (error) {
             logger.error(error);
@@ -284,42 +304,22 @@ export namespace FrontendApiController {
     };
 
     export const renameFile = async (req: Request, res: Response) => {
-        const {sourcePath, destPath} = req.body;
-        if ([sourcePath, destPath].includes(undefined)) {
-            res.status(400).json({
-                status: false,
-                msg: "缺少查询参数"
-            } as Reply);
-            return;
-        }
-        const checkResult = checkFileOperation(FileOperation.FILE_RENAME, sourcePath, destPath);
-        switch (checkResult) {
-            case CheckResult.PASSED:
-                await rename(sourcePath, destPath);
-                break;
-            case CheckResult.DEST_EXIST:
-                break;
-            case CheckResult.SOURCE_NOT_FOUND:
-                break;
-        }
+        await fileOperation(req, res, FileOperation.FILE_RENAME,
+            (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
     export const copyFile = async (req: Request, res: Response) => {
-        const {sourcePath, destPath} = req.body;
-        if ([sourcePath, destPath].includes(undefined)) {
-            res.status(400).json({
-                status: false,
-                msg: "缺少查询参数"
-            } as Reply);
-            return;
-        }
+        await fileOperation(req, res, FileOperation.FILE_COPY,
+            (sourcePath, destPath) => cp(sourcePath, destPath));
     };
 
     export const renameFolder = async (req: Request, res: Response) => {
-
+        await fileOperation(req, res, FileOperation.DIR_RENAME,
+            (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
     export const copyFolder = async (req: Request, res: Response) => {
-
+        await fileOperation(req, res, FileOperation.DIR_COPY,
+            (sourcePath, destPath) => cp(sourcePath, destPath, {recursive: true}));
     };
 }

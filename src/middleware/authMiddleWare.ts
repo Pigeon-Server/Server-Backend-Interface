@@ -84,6 +84,7 @@ export namespace AuthMiddleware {
                 status: false,
                 msg: "Your permissions are not sufficient to view this entry"
             } as Reply);
+            return;
         }
         next();
     };
@@ -95,6 +96,7 @@ export namespace AuthMiddleware {
                 status: false,
                 msg: "Your permissions are not sufficient to view this entry"
             } as Reply);
+            return;
         }
         next();
     }
