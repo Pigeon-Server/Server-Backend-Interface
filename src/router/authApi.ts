@@ -8,7 +8,7 @@ authApiRouter.use(AuthMiddleware.checkCallLimit);
 
 authApiRouter.post("/login", AuthApiController.userLogin);
 
-authApiRouter.use(AuthMiddleware.verifyJWTToken);
+authApiRouter.use(AuthMiddleware.requestLogin);
 
 authApiRouter.get("/token/info", AuthApiController.getTokenInfo);
 authApiRouter.get("/token/flush", AuthApiController.flushToken);

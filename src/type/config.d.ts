@@ -94,7 +94,8 @@ type ServerConfig = {
         enable: boolean,
         recordInterval: string,
         retentionDays: string
-    }
+    },
+    uploadPath: string,
     homePage: string,
     port: number
 }

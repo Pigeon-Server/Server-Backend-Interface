@@ -24,7 +24,7 @@ export namespace EncryptUtils {
         return encrypt('sha1', content);
     }
 
-     export function encryptSHA256(content: string): string {
+    export function encryptSHA256(content: string): string {
         return encrypt('sha256', content);
     }
 

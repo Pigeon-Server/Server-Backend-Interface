@@ -7,10 +7,11 @@ import {Config} from "@/base/config";
 import {readFileSync, rmSync, statSync, writeFileSync} from "fs";
 import {logger} from "@/base/logger";
 import {Database} from "@/database/database";
-import {cp, rename} from "fs/promises";
+import {cp, readFile, rename} from "fs/promises";
 import {createWriteStream} from "fs";
 import archiver from "archiver";
 import AdmZip from "adm-zip";
+import {EncryptUtils} from "@/utils/encryptUtils";
 
 export namespace FrontendApiController {
     import reloadSyncConfig = SyncFileManager.reloadSyncConfig;
@@ -21,6 +22,9 @@ export namespace FrontendApiController {
     import checkFileOperation = FileUtils.checkFileOperation;
     import FileOperation = FileUtils.FileOperation;
     import CheckResult = FileUtils.CheckResult;
+    import encryptFile = EncryptUtils.encryptFile;
+    import encryptSHA256 = EncryptUtils.encryptSHA256;
+    import serverConfig = Config.serverConfig;
 
     const checkPath = (path: string) => {
         return path.startsWith(updateConfig.fileBasePath) ? path : join(updateConfig.fileBasePath, path);
@@ -339,7 +343,7 @@ export namespace FrontendApiController {
     };
 
     export const uploadFile = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+        const {index, hash} = req.body;
         const file = req.file;
         if (file === undefined) {
             res.status(400).json({
@@ -348,11 +352,80 @@ export namespace FrontendApiController {
             } as Reply);
             return;
         }
-        await rename(file.path, path.endsWith(file.originalname) ? path : join(path, file.originalname));
+        const sha256 = encryptFile(file.path, encryptSHA256);
+        if (sha256 !== hash) {
+            res.status(400).json({
+                status: false,
+                msg: 'Block hash verification failed'
+            } as Reply);
+            return;
+        }
+        const chunkFilePath = join(file.destination, `${hash}.tmp`);
+        if (checkFileExist(chunkFilePath)) {
+            res.status(200).json({
+                status: true,
+                data: {
+                    pass: true,
+                    index: index
+                }
+            } as Reply);
+            return;
+        }
+        await rename(file.path, chunkFilePath);
         res.status(200).json({
             status: true,
-            msg: 'File uploaded successfully'
+            data: {
+                pass: false,
+                index: index
+            }
         } as Reply);
+    };
+
+    export const mergeFile = async (req: Request, res: Response) => {
+        const {fileName, chunkHashList, removeChunkFile} = req.body;
+        const fileSavePath = checkPath(fileName);
+        const output = createWriteStream(fileSavePath);
+
+        output.on("error", (err) => {
+            logger.error(err.message);
+            res.status(500).json({
+                status: false,
+                msg: "An error occurred in the merged file"
+            } as Reply);
+            throw err;
+        });
+
+        (chunkHashList as string[]).map((chunkHash) => {
+            const chunkSavePath = join(serverConfig.uploadPath, `${chunkHash}.tmp`);
+            if (!checkFileExist(chunkSavePath)) {
+                res.status(404).json({
+                    status: false,
+                    msg: `Can not found chunk file ${chunkHash}`
+                });
+                return;
+            }
+            const data = readFileSync(chunkSavePath);
+            output.write(data);
+        });
+
+        try {
+            if (removeChunkFile) {
+                (chunkHashList as string[]).forEach((chunkHash) => {
+                    rmSync(join(serverConfig.uploadPath, `${chunkHash}.tmp`));
+                });
+            }
+
+            output.end(() => {
+                res.status(200).json({
+                    status: true
+                });
+            });
+        } catch (err: any) {
+            res.status(500).json({
+                status: false,
+                msg: "An error occurred in the merged file"
+            });
+        }
     };
 
     export const compression = async (req: Request, res: Response) => {

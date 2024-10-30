@@ -3,14 +3,16 @@ import {FrontendApiMiddleWare} from "@/middleware/frontendApiMiddleWare";
 import {FrontendApiController} from "@/controller/frontendApiController";
 import {AuthMiddleware} from "@/middleware/authMiddleWare";
 import multer from "multer";
+import {Config} from "@/base/config";
+import serverConfig = Config.serverConfig;
 
-const upload = multer({dest: "./uploads"});
+const upload = multer({dest: serverConfig.uploadPath});
 
 export const frontendApiRouter = express.Router();
 
 frontendApiRouter.use(FrontendApiMiddleWare.checkCallLimit);
 
-frontendApiRouter.use(AuthMiddleware.verifyJWTToken);
+frontendApiRouter.use(AuthMiddleware.requestLogin);
 
 frontendApiRouter.use(AuthMiddleware.requestAdmin);
 
@@ -47,6 +49,7 @@ frontendApiRouter.delete("/file/:path", FrontendApiController.deleteFile);
 
 frontendApiRouter.use(AuthMiddleware.requestSuperAdmin);
 
-frontendApiRouter.post("/file/upload/:path", upload.single('file'), FrontendApiController.uploadFile);
+frontendApiRouter.post("/upload", upload.single('file'), FrontendApiController.uploadFile);
+frontendApiRouter.post("/merge", FrontendApiController.mergeFile);
 
 

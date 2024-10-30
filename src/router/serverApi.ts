@@ -7,7 +7,7 @@ export const serverApiRouter = express.Router();
 
 serverApiRouter.use(ServerApiMiddleware.checkCallLimit);
 
-serverApiRouter.use(AuthMiddleware.verifyJWTToken);
+serverApiRouter.use(AuthMiddleware.requestLogin);
 
 serverApiRouter.use(AuthMiddleware.requestAdmin);
 
