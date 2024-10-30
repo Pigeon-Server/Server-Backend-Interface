@@ -2,7 +2,6 @@
 /logs
 /dist
 /node_modules
-/package-lock.json
 /config/*.json
 /.idea
 /request/http-client.private.env.json
