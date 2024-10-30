@@ -16,11 +16,13 @@ frontendApiRouter.use(AuthMiddleware.requestLogin);
 
 frontendApiRouter.use(AuthMiddleware.requestAdmin);
 
-frontendApiRouter.get("/rules/reload", FrontendApiController.reloadRules);
+frontendApiRouter.post("/rules/reload", FrontendApiController.reloadRules);
 
 frontendApiRouter.post("/rules/get-list", FrontendApiController.getRuleList);
 frontendApiRouter.post("/rules/create", FrontendApiController.addRule);
 
+frontendApiRouter.put("/rules/restore/:id", FrontendApiController.restoreRule);
+frontendApiRouter.delete("/rules/real/:id", FrontendApiController.realDeleteRule);
 frontendApiRouter.delete("/rules/:id", FrontendApiController.deleteRule);
 frontendApiRouter.get("/rules/:id", FrontendApiController.getRule);
 

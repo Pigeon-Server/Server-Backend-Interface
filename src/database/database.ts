@@ -35,7 +35,7 @@ export namespace Database {
                 database.queryRaw(`CREATE EVENT IF NOT EXISTS \`updateKey\` ` +
                     `ON SCHEDULE EVERY ${String(databaseConfig.updateTime)} SECOND ` +
                     `DO UPDATE ${databaseConfig.prefix}_key SET \`enable\` = FALSE WHERE \`enable\` = TRUE ` +
-                    `AND UNIX_TIMESTAMP(expirationTime) + ${String(databaseConfig.updateTime)} <UNIX_TIMESTAMP(now());;`)
+                    `AND UNIX_TIMESTAMP(expirationTime) + ${String(databaseConfig.updateTime)} > UNIX_TIMESTAMP(now());;`)
                     .then(() => {
                         dbLogger.info(`Database initialized.`);
                         ServerLifeCycle.emitEvent(ServerLifeCycleEvent.ServerDatabaseInit);
@@ -124,7 +124,8 @@ export namespace Database {
         return await SyncRule.findAll({
             where: {
                 root: true
-            }
+            },
+            paranoid: false
         });
     }
 
@@ -163,8 +164,10 @@ export namespace Database {
                 ["configName", "name"],
                 ["enable", "activity"],
                 "createTime",
-                "updateTime"
-            ]
+                "updateTime",
+                ["deleted", "hasDeleted"]
+            ],
+            paranoid: false
         })
     }
 
@@ -215,6 +218,23 @@ export namespace Database {
         return syncConfig.save();
     }
 
+    export function deleteSyncConfig(id: number) {
+        return SyncRule.destroy({
+            where: {
+                ruleId: id
+            }
+        });
+    }
+
+    export function realDeleteSyncConfig(id: number) {
+        return SyncRule.destroy({
+            where: {
+                ruleId: id
+            },
+            force: true
+        });
+    }
+
     export function deleteSyncConfigFolder(ruleId: number, ids: number[]) {
         return SyncRule.destroy({
             where: {
@@ -223,6 +243,14 @@ export namespace Database {
                 id: {
                     [Op.in]: ids
                 }
+            }
+        });
+    }
+
+    export function restoreSyncConfig(ruleId: number) {
+        return SyncRule.restore({
+            where: {
+                ruleId: ruleId
             }
         });
     }
@@ -252,16 +280,8 @@ export namespace Database {
         });
     }
 
-    export function deleteSyncConfig(id: number) {
-        return SyncRule.destroy({
-            where: {
-                ruleId: id
-            }
-        });
-    }
-
     export async function getAvailableRuleId() {
-        return (await SyncRule.max("ruleId")) as number + 1;
+        return (await SyncRule.max("ruleId", {paranoid: false})) as number + 1;
     }
 
     export async function enableSyncConfig(id: number) {

@@ -56,12 +56,12 @@ export namespace LauncherApiController {
             uuid,
             packName
         } = req.body;
-        const result = await Database.createKey(<PlayerCreateKeyInfo>{
+        const result = await Database.getKey({
             username,
             uuid,
             macAddress,
             packName
-        }).catch(err => api.error(err.message));
+        } as PlayerGetKeyInfo).catch(err => api.error(err.message));
         if (result === undefined) {
             api.warn(`Access Denial: Mysql database error.`);
             res.status(500).json({
@@ -122,10 +122,7 @@ export namespace LauncherApiController {
             return;
         }
         api.info(`Send package config to client for ${packName}`);
-        res.status(200).json({
-            status: true,
-            data: clientJson
-        } as Reply);
+        res.status(200).json(clientJson);
     };
 
     export const getSourceHandler = (req: Request, res: Response) => {

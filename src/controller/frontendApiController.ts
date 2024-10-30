@@ -7,7 +7,7 @@ import {Config} from "@/base/config";
 import {readFileSync, rmSync, statSync, writeFileSync} from "fs";
 import {logger} from "@/base/logger";
 import {Database} from "@/database/database";
-import {cp, readFile, rename} from "fs/promises";
+import {cp, rename} from "fs/promises";
 import {createWriteStream} from "fs";
 import archiver from "archiver";
 import AdmZip from "adm-zip";
@@ -153,9 +153,27 @@ export namespace FrontendApiController {
         } as Reply);
     };
 
+    export const realDeleteRule = async (req: Request, res: Response) => {
+        const ruleId = Number(req.params.id);
+        await Database.realDeleteSyncConfig(ruleId);
+        res.status(200).json({
+            status: true,
+            data: ruleId
+        } as Reply);
+    };
+
     export const deleteRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
         await Database.deleteSyncConfig(ruleId);
+        res.status(200).json({
+            status: true,
+            data: ruleId
+        } as Reply);
+    };
+
+    export const restoreRule = async (req: Request, res: Response) => {
+        const ruleId = Number(req.params.id);
+        await Database.restoreSyncConfig(ruleId);
         res.status(200).json({
             status: true,
             data: ruleId

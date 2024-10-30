@@ -190,18 +190,18 @@ export namespace SyncFileManager {
                 continue;
             }
             excludeConfig.push(datum.configName);
-            if (!datum.enable) {
+            if (!datum.enable || datum.deleted) {
                 // config disable
                 // if it has stored in local file
                 // delete it
-                logger.debug(`SyncConfigDB: ${datum.configName} config disable`);
+                logger.debug(`SyncConfigDB: ${datum.configName} config disable or has marked delete`);
                 if (datum.configName in syncConfig) {
                     delete syncConfig[datum.configName];
                 }
                 continue;
             }
             const temp = {
-                basePath: datum.serverPath,
+                basePath: datum.serverPath.startsWith(updateConfig.fileBasePath) ? datum.serverPath : join(updateConfig.fileBasePath, datum.serverPath),
                 files: (<string[]>datum.syncFiles).reduce((tmp, value) => {
                     tmp[value] = null;
                     return tmp;

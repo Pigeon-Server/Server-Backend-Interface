@@ -2,7 +2,7 @@ import {CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, M
 import {
     Attribute,
     AutoIncrement,
-    CreatedAt,
+    CreatedAt, DeletedAt,
     Index,
     NotNull,
     PrimaryKey,
@@ -87,4 +87,8 @@ export class SyncRule extends Model<InferAttributes<SyncRule>, InferCreationAttr
     @NotNull
     @UpdatedAt
     declare updateTime: CreationOptional<Date>;
+
+    @Attribute(DataTypes.DATE)
+    @DeletedAt
+    declare deleted?: Date;
 }
