@@ -7,7 +7,7 @@ import {connectionLogger, logger} from "@/base/logger";
 import express, {Request, Response} from "express";
 import cors from 'cors';
 import process from "node:process";
-import fs, {rm} from "fs";
+import fs from "fs";
 import https from "https";
 import http from "http";
 import {Config} from "@/base/config";
@@ -27,7 +27,6 @@ import {PropertyMonitor} from "@/module/propertyMonitor";
 import initDatabase = Database.initDatabase;
 import serverConfig = Config.serverConfig;
 import checkFileExist = FileUtils.checkFileExist;
-import {LauncherApiMiddleWare} from "@/middleware/launcherApiMiddleWare";
 import {LauncherApiController} from "@/controller/launcherApiController";
 
 ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerDatabaseInit, SyncFileManager.checkSyncCache);
@@ -58,6 +57,8 @@ app.use("/api/ui", frontendApiRouter);
 app.use("/api/auth", authApiRouter);
 app.use("/api/oauth", oauthApiRouter);
 
+// 兼容 liteUI 0.1.3
+app.get("/api/update_link", LauncherApiController.updateLinkHandler);
 app.all("/api", LauncherApiController.interfaceDeprecatedHandler);
 
 app.use('*', (_: Request, res: Response) => {

@@ -40,7 +40,7 @@ export namespace LauncherApiController {
 
     export const updateLinkHandler = (_: Request, res: Response) => {
         const jarConfig = {
-            "jar": updateConfig.launchUpdate.baseUrl + "/api/get_jar",
+            "jar": updateConfig.launchUpdate.baseUrl + "/api/launcher/get_jar",
             "jarsha1": encryptFile(updateConfig.launchUpdate.jarPath, encryptSHA1),
             "changeLog": updateConfig.launchUpdate.changeLog,
             "version": updateConfig.launchUpdate.version
