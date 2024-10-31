@@ -15,9 +15,6 @@ export const launcherApiRouter = express.Router();
 
 launcherApiRouter.use(LauncherApiMiddleWare.checkCallLimit);
 
-launcherApiRouter.get("/get-access-key", LauncherApiController.interfaceDeprecatedHandler);
-launcherApiRouter.get("/check-update", LauncherApiController.interfaceDeprecatedHandler);
-
 launcherApiRouter.get("/get_jar", LauncherApiController.getJarHandler);
 launcherApiRouter.get("/update_link", LauncherApiController.updateLinkHandler);
 

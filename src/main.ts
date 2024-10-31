@@ -1,12 +1,13 @@
 import path from "path";
 import alias from "module-alias";
+
 alias(path.resolve(__dirname, "../"));
 
 import {connectionLogger, logger} from "@/base/logger";
 import express, {Request, Response} from "express";
 import cors from 'cors';
 import process from "node:process";
-import fs, { rm } from "fs";
+import fs, {rm} from "fs";
 import https from "https";
 import http from "http";
 import {Config} from "@/base/config";
@@ -26,6 +27,8 @@ import {PropertyMonitor} from "@/module/propertyMonitor";
 import initDatabase = Database.initDatabase;
 import serverConfig = Config.serverConfig;
 import checkFileExist = FileUtils.checkFileExist;
+import {LauncherApiMiddleWare} from "@/middleware/launcherApiMiddleWare";
+import {LauncherApiController} from "@/controller/launcherApiController";
 
 ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerDatabaseInit, SyncFileManager.checkSyncCache);
 
@@ -54,6 +57,8 @@ app.use("/api/server", serverApiRouter);
 app.use("/api/ui", frontendApiRouter);
 app.use("/api/auth", authApiRouter);
 app.use("/api/oauth", oauthApiRouter);
+
+app.all("/api", LauncherApiController.interfaceDeprecatedHandler);
 
 app.use('*', (_: Request, res: Response) => {
     logger.info(`Not router match, redirect to home page ${serverConfig.homePage}`);
