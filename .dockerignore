@@ -1,0 +1,9 @@
+node_modules/
+source/
+cache/
+dist/
+logs/
+uploads/
+.idea/
+.git/
+config/*.json

@@ -1,0 +1,36 @@
+services:
+  app:
+    image: halfnothing/pigeon-server-sbi:${SBI_VERSION}
+#    build:
+#      dockerfile: Dockerfile
+    container_name: server-backend-interface
+    ports:
+      - "${SBI_PORT}:80"
+    volumes:
+      - sbi_config:/opt/sbi/config
+      - sbi_data:/opt/sbi/source
+    restart: always
+    depends_on:
+      - database
+
+  database:
+    image: mysql:${MYSQL_VERSION}
+    container_name: mysql
+    ports:
+      - "${MYSQL_PORT}:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_DATABASE:
+      TZ:
+    volumes:
+      - db_log:/var/log/mysql
+      - db_data:/var/lib/mysql
+      - db_config:/etc/mysql
+
+volumes:
+  sbi_config:
+  sbi_data:
+  db_log:
+  db_data:
+  db_config:
