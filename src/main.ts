@@ -59,7 +59,7 @@ app.use("/api/oauth", oauthApiRouter);
 
 // 兼容 liteUI 0.1.3
 app.get("/api/update_link", LauncherApiController.updateLinkHandler);
-app.all("/api", LauncherApiController.interfaceDeprecatedHandler);
+app.all("/api/:path", LauncherApiController.interfaceDeprecatedHandler);
 
 app.use('*', (_: Request, res: Response) => {
     logger.info(`Not router match, redirect to home page ${serverConfig.homePage}`);

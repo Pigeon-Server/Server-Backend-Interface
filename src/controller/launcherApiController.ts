@@ -26,7 +26,7 @@ export namespace LauncherApiController {
     import encryptMD5 = EncryptUtils.encryptMD5;
 
     export const interfaceDeprecatedHandler = (req: Request, res: Response) => {
-        api.warn(`Interface /api${req.url} accessed by method ${req.method} has been deprecated`);
+        api.warn(`Interface ${req.url} accessed by method ${req.method} has been deprecated`);
         res.status(405).json({
             status: false,
             msg: "此接口已被弃用,请更新启动器"

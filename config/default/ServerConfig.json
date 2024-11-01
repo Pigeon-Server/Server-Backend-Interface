@@ -23,6 +23,7 @@
         "recordInterval": "5m",
         "retentionDays": "30d"
     },
+    "uploadPath": "./uploads",
     "homePage": "https://www.baidu.com",
     "port": 80
 }

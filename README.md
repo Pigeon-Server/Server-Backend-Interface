@@ -50,7 +50,7 @@ docker compose up -d
 ```
 
 ### 通过docker运行
-1.请确保已经安装了docker
+1.请确保已经安装了docker  
 2.构建容器镜像
 ```shell
 # sbi:latest 中冒号前面的内容，可以任意更换

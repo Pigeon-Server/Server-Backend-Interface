@@ -35,7 +35,7 @@ export namespace Database {
                 database.queryRaw(`CREATE EVENT IF NOT EXISTS \`updateKey\` ` +
                     `ON SCHEDULE EVERY ${String(databaseConfig.updateTime)} SECOND ` +
                     `DO UPDATE ${databaseConfig.prefix}_key SET \`enable\` = FALSE WHERE \`enable\` = TRUE ` +
-                    `AND UNIX_TIMESTAMP(expirationTime) + ${String(databaseConfig.updateTime)} > UNIX_TIMESTAMP(now());;`)
+                    `AND UNIX_TIMESTAMP(expirationTime) + ${String(databaseConfig.updateTime)} < UNIX_TIMESTAMP(now());;`)
                     .then(() => {
                         dbLogger.info(`Database initialized.`);
                         ServerLifeCycle.emitEvent(ServerLifeCycleEvent.ServerDatabaseInit);
