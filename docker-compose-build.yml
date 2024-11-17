@@ -15,9 +15,8 @@ services:
       - db_config:/etc/mysql
 
   app:
-    image: halfnothing/pigeon-server-sbi:${SBI_VERSION}
-#    build:
-#      dockerfile: Dockerfile
+    build:
+      dockerfile: Dockerfile
     container_name: server-backend-interface
     ports:
       - "${SBI_PORT}:80"
@@ -28,27 +27,9 @@ services:
     depends_on:
       - database
 
-  web:
-    image: nginx:1.27.2
-    container_name: nginx
-    ports:
-      - "${NGINX_PORT}:80"
-    volumes:
-      - web_html:/usr/share/nginx/html
-      - nginx_config:/etc/nginx/nginx.conf
-      - web_config:/etc/nginx/conf.d
-      - web_log:/var/log/nginx
-    restart: always
-    depends_on:
-      - app
-
 volumes:
   sbi_config:
   sbi_data:
   db_log:
   db_data:
   db_config:
-  web_html:
-  nginx_config:
-  web_config:
-  web_log:
