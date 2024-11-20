@@ -64,6 +64,8 @@ app.use(session({
     saveUninitialized: true
 }));
 
+app.use(CommonMiddleWare.noCacheHandler);
+
 app.use("/api/launcher", launcherApiRouter);
 app.use("/api/server", serverApiRouter);
 app.use("/api/ui", frontendApiRouter);

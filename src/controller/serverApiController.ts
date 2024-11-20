@@ -5,20 +5,18 @@ import {Performance} from "@/database/model/performance";
 import {Op} from "@sequelize/core";
 import {Utils} from "@/utils/utils";
 import TimeOperation = Utils.TimeOperation;
-import {Config} from "@/base/config";
 
 export namespace ServerApiController {
 
     import getDate = Utils.getDate;
     import translateTime = Utils.translateTime;
-    import serverConfig = Config.serverConfig;
     export const getServerStatusHandler = async (req: Request, res: Response) => {
         let {fromDate, toDate} = req.body;
         if (fromDate && toDate) {
             fromDate = Date.parse(fromDate);
             toDate = Date.parse(toDate);
         } else {
-            fromDate = getDate(TimeOperation.Early, translateTime(serverConfig.monitor.retentionDays));
+            fromDate = getDate(TimeOperation.Early, translateTime("1d"));
             toDate = Date.now();
         }
         api.info(`Send server status to client`);

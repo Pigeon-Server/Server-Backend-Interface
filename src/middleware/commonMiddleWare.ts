@@ -15,4 +15,9 @@ export namespace CommonMiddleWare {
         res.status(500);
         res.send("Server Error!")
     };
+
+    export const noCacheHandler = (_: Request, res: Response, next: NextFunction) => {
+        res.setHeader("Cache-Control", "no-cache");
+        next();
+    }
 }
