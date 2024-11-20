@@ -1,8 +1,15 @@
 {
-    "apikey": {
+    "api": {
+        "baseUrl": "",
         "timeout": 3600,
         "key": "123456",
-        "clearInterval": 3600000
+        "clearInterval": 3600000,
+        "oauth": {
+            "authUrl": "",
+            "tokenUrl": "",
+            "clientId": 1,
+            "clientSecret": "123"
+        }
     },
     "updateMaxThread": 8,
     "launchUpdate": {
@@ -11,10 +18,5 @@
         "changeLog": "123",
         "jarPath": "123"
     },
-    "oauth": {
-        "clientId": 1,
-        "clientSecret": "123"
-    },
-    "useDatabase": false,
     "fileBasePath": "source"
 }

@@ -10,8 +10,10 @@
 
 import {createHash} from "crypto";
 import {readFileSync} from "fs";
+import {sign} from "jsonwebtoken";
 
 export namespace EncryptUtils {
+
     export function encrypt(algorithm: string, content: string): string {
         return createHash(algorithm).update(content, 'utf8').digest('hex');
     }
@@ -30,5 +32,19 @@ export namespace EncryptUtils {
 
     export function encryptMD5(content: string): string {
         return encrypt('md5', content);
+    }
+
+    export function encryptPassword(password: string, salt: string): string {
+        return encryptSHA256(`${salt.substring(0, 16)}.${password}.${salt.substring(17)}`);
+    }
+
+    export function generateJWTToken(payload: object, expiresIn: string, secretKey: string): string {
+        return sign(payload, secretKey,
+            {
+                expiresIn,
+                algorithm: "HS256",
+                issuer: "Pigeon Server Team",
+                subject: "Server Backend Interface"
+            });
     }
 }

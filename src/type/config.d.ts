@@ -71,6 +71,7 @@ type DatabaseConfig = {
 }
 
 type ServerConfig = {
+    version: string,
     https: {
         enable: boolean,
         enableHSTS: boolean,
@@ -95,16 +96,24 @@ type ServerConfig = {
         recordInterval: string,
         retentionDays: string
     },
+    sessionToken: string,
     uploadPath: string,
     homePage: string,
     port: number
 }
 
 type UpdateConfig = {
-    apikey: {
+    api: {
+        baseUrl: string,
         timeout: number,
         key: string,
-        clearInterval: number
+        clearInterval: number,
+        oauth: {
+            authUrl: string,
+            tokenUrl: string,
+            clientId: number,
+            clientSecret: string
+        }
     },
     updateMaxThread: number,
     launchUpdate: {
@@ -112,10 +121,6 @@ type UpdateConfig = {
         version: string,
         changeLog: string,
         jarPath: string
-    }
-    oauth: {
-        clientId: number,
-        clientSecret: string
     }
     useDatabase: boolean,
     fileBasePath: string

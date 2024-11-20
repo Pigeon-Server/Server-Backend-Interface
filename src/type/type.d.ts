@@ -12,3 +12,14 @@ type JwtData = {
     sub: string
 };
 
+type OauthTokenData = {
+    access_token: string,
+    refresh_token: string,
+    expires_in: number,
+}
+
+type UserApiData = {
+    permission: number,
+    nickname: string
+}
+

@@ -1,30 +1,36 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "rootDirs": [
-      "./src"
-    ],
-    "outDir": "./dist",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "resolvePackageJsonExports": true,
-    "inlineSourceMap": true,
-    "baseUrl": "./src",
-    "experimentalDecorators": true,
-    "paths": {
-      "@config/*": ["../config/*"],
-      "@cache/*": ["../cache/*"],
-      "@/*": ["./*"]
-    }
-  },
-  "exclude": [
-    "./node_modules",
-    "./logs",
-    "./config"
-  ]
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "rootDirs": [
+            "./src"
+        ],
+        "outDir": "./dist",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "resolvePackageJsonExports": true,
+        "inlineSourceMap": true,
+        "baseUrl": "./src",
+        "experimentalDecorators": true,
+        "paths": {
+            "@config/*": [
+                "../config/*"
+            ],
+            "@cache/*": [
+                "../cache/*"
+            ],
+            "@/*": [
+                "./*"
+            ]
+        }
+    },
+    "exclude": [
+        "./node_modules",
+        "./logs",
+        "./config"
+    ]
 }

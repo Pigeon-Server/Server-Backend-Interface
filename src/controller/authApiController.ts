@@ -1,27 +1,17 @@
 import {Request, Response} from "express";
 import {EncryptUtils} from "@/utils/encryptUtils";
 import {api} from "@/base/logger";
-import {sign} from "jsonwebtoken";
 import {Config} from "@/base/config";
 import {Utils} from "@/utils/utils";
 import {floor} from "lodash";
 import {Database} from "@/database/database";
 
 export namespace AuthApiController {
-    import encryptSHA256 = EncryptUtils.encryptSHA256;
     import serverConfig = Config.serverConfig;
     import translateTime = Utils.translateTime;
     import getAccountInfoByUsername = Database.getAccountInfoByUsername;
-
-    export function generateJWTToken(payload: object, expiresIn: string): string {
-        return sign(payload, serverConfig.jwt.secretKey,
-            {
-                expiresIn,
-                algorithm: "HS256",
-                issuer: "Pigeon Server Team",
-                subject: "Server Backend Interface"
-            });
-    }
+    import encryptPassword = EncryptUtils.encryptPassword;
+    import generateJWTToken = EncryptUtils.generateJWTToken;
 
     export const userLogin = async (req: Request, res: Response) => {
         const {username, password} = req.body;
@@ -41,7 +31,7 @@ export namespace AuthApiController {
             return
         }
         api.debug(`User(${username}) request login with password: ${password}, salt: ${data.salt}`);
-        const password_sha256 = encryptSHA256(`${username}.${password}.${data.salt}`);
+        const password_sha256 = encryptPassword(password, data.salt);
         if (data.password === password_sha256) {
             api.debug(`Password authentication successful`);
             res.status(200).json({
@@ -53,12 +43,12 @@ export namespace AuthApiController {
                     token: generateJWTToken({
                         username,
                         permission: data.permission
-                    }, serverConfig.jwt.expiresIn),
+                    }, serverConfig.jwt.expiresIn, serverConfig.jwt.secretKey),
                     refreshToken: generateJWTToken({
                         username,
                         permission: data.permission,
                         type: "refresh"
-                    }, serverConfig.jwt.refreshTokenExpiresIn)
+                    }, serverConfig.jwt.refreshTokenExpiresIn, serverConfig.jwt.secretKey)
                 } as AuthInfo
             } as Reply);
             return
@@ -113,12 +103,12 @@ export namespace AuthApiController {
                 token: generateJWTToken({
                     username: data.username,
                     permission: data.permission
-                }, serverConfig.jwt.expiresIn),
+                }, serverConfig.jwt.expiresIn, serverConfig.jwt.secretKey),
                 refreshToken: generateJWTToken({
                     username: data.username,
                     permission: data.permission,
                     type: "refresh"
-                }, serverConfig.jwt.refreshTokenExpiresIn)
+                }, serverConfig.jwt.refreshTokenExpiresIn, serverConfig.jwt.secretKey)
             } as AuthInfo
         } as Reply);
     };

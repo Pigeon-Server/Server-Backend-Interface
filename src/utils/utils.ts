@@ -35,7 +35,7 @@ export namespace Utils {
     }
 
     export function getDate(operation: TimeOperation,
-                            time: number = updateConfig.apikey.timeout,
+                            time: number = updateConfig.api.timeout,
                             timeUnit: DurationInputArg2 = "seconds"): Date {
         switch (operation) {
             case TimeOperation.None:
@@ -67,7 +67,7 @@ export namespace Utils {
     }
 
     export function generateKey(): string {
-        return stringRandom(32, {letters: true, numbers: false});
+        return stringRandom(32, {letters: true, numbers: true, specials: false});
     }
 
     export function translateStringToArray(data: SyncRule | SyncRule[]) {

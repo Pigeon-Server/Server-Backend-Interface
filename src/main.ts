@@ -28,6 +28,7 @@ import initDatabase = Database.initDatabase;
 import serverConfig = Config.serverConfig;
 import checkFileExist = FileUtils.checkFileExist;
 import {LauncherApiController} from "@/controller/launcherApiController";
+import session from "express-session";
 
 ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerDatabaseInit, SyncFileManager.checkSyncCache);
 
@@ -50,6 +51,18 @@ app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 
 app.use(cors());
+
+app.use(session({
+    secret: serverConfig.sessionToken,
+    cookie: {
+        secure: false,
+        signed: false,
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60,
+    },
+    resave: true,
+    saveUninitialized: true
+}));
 
 app.use("/api/launcher", launcherApiRouter);
 app.use("/api/server", serverApiRouter);

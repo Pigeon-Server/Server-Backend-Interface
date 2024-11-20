@@ -37,9 +37,7 @@ export namespace SyncFileManager {
             syncConfig.md5 = {}
         }
         let excludeConfig: string[] = [];
-        if (updateConfig.useDatabase) {
-            await getStoredSyncConfig(excludeConfig);
-        }
+        await getStoredSyncConfig(excludeConfig);
         for (const packName in syncConfig) {
             if (syncConfig.ignoredKey.includes(packName)) continue;
             if (excludeConfig.includes(packName)) continue;

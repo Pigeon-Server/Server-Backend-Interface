@@ -1,4 +1,5 @@
 {
+    "version": "1.0.0",
     "https": {
         "enable": false,
         "enableHSTS": false,
@@ -23,6 +24,7 @@
         "recordInterval": "5m",
         "retentionDays": "30d"
     },
+    "sessionToken": "",
     "uploadPath": "./uploads",
     "homePage": "https://www.baidu.com",
     "port": 80

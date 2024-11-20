@@ -18,12 +18,12 @@ import updateConfig = Config.updateConfig;
 import getDate = Utils.getDate;
 import TimeOperation = Utils.TimeOperation;
 
-axios_.defaults.baseURL = "https://skin.pigeon-server.cn";
+axios_.defaults.baseURL = updateConfig.api.baseUrl;
 
 const accountCacheMap = new Map<string, { status: AccountStatus, uuid: string }>();
 const requestConfig: AxiosRequestConfig = {
     headers: {
-        "api-key": updateConfig.apikey.key
+        "api-key": updateConfig.api.key
     }
 };
 
@@ -43,14 +43,14 @@ enum AccountStatus {
  * @export
  */
 
-let nextClear = getDate(TimeOperation.Later, updateConfig.apikey.clearInterval, "milliseconds");
+let nextClear = getDate(TimeOperation.Later, updateConfig.api.clearInterval, "milliseconds");
 export const getNextClearTime = () => {
     return nextClear;
 };
 logger.debug("Time of next cache clearing: " + nextClear);
 
 export function clearApiCache() {
-    nextClear = getDate(TimeOperation.Later, updateConfig.apikey.clearInterval, "milliseconds");
+    nextClear = getDate(TimeOperation.Later, updateConfig.api.clearInterval, "milliseconds");
     accountCacheMap.clear();
     logger.debug("Clear Api Cache.");
     logger.debug("Time of next cache clearing: " + nextClear);
@@ -59,7 +59,7 @@ export function clearApiCache() {
 let timer: NodeJS.Timeout | undefined;
 
 ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerStarted, () => {
-    timer = setInterval(clearApiCache, updateConfig.apikey.clearInterval);
+    timer = setInterval(clearApiCache, updateConfig.api.clearInterval);
 });
 
 ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerExit, () => {
