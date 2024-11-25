@@ -10,4 +10,4 @@ config/*.json
 .env*
 docker-compose*.yml
 Dockerfile
-request/
+test*

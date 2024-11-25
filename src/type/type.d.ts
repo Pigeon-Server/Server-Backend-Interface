@@ -23,3 +23,8 @@ type UserApiData = {
     nickname: string
 }
 
+type FileOperationParam = {
+    sourcePath: string,
+    destPath: string
+}
+

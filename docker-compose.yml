@@ -15,7 +15,7 @@ services:
       - db_config:/etc/mysql
 
   app:
-    image: halfnothing/pigeon-server-sbi:${SBI_VERSION}
+    image: halfnothing/pigeon-server-sbi
 #    build:
 #      dockerfile: Dockerfile
     container_name: server-backend-interface

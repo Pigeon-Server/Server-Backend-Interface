@@ -34,6 +34,45 @@ export namespace FrontendApiController {
         return checkPath(req.params.path);
     };
 
+    const filesOperation = async (req: Request, res: Response, operation: FileOperation,
+                                  successCallback: (sourcePath: string, destPath: string) => Promise<void>) => {
+        let {fileList} = req.body;
+        if (fileList === undefined) {
+            res.status(400).json({
+                status: false,
+                msg: "缺少查询参数"
+            } as Reply);
+            return;
+        }
+        let success = 0;
+        let fail = 0;
+        for (const file of <FileOperationParam[]>fileList) {
+            const sourcePath = checkPath(file.sourcePath);
+            const destPath = checkPath(file.destPath);
+            const checkResult = checkFileOperation(operation, sourcePath, destPath);
+            switch (checkResult) {
+                case CheckResult.PASSED:
+                    await successCallback(sourcePath, destPath);
+                    success++;
+                    break;
+                case CheckResult.DEST_EXIST:
+                    fail++;
+                    break;
+                case CheckResult.SOURCE_NOT_FOUND:
+                    fail++;
+                    break;
+            }
+        }
+        res.status(200).json({
+            status: true,
+            data: {
+                success,
+                fail,
+                total: (<FileOperationParam[]>fileList).length
+            }
+        } as Reply);
+    };
+
     const fileOperation = async (req: Request, res: Response, operation: FileOperation,
                                  successCallback: (sourcePath: string, destPath: string) => Promise<void>) => {
         let {sourcePath, destPath} = req.body;
@@ -284,6 +323,29 @@ export namespace FrontendApiController {
         }
     };
 
+    export const deleteFolders = async (req: Request, res: Response) => {
+        const {deleteFolders} = req.body;
+        let success = 0;
+        let fail = 0;
+        for (const file of <string[]>deleteFolders) {
+            try {
+                rmSync(checkPath(file));
+                success++;
+            } catch (err) {
+                logger.error(err);
+                fail++;
+            }
+        }
+        res.status(200).json({
+            status: true,
+            data: {
+                success,
+                fail,
+                total: (<string[]>deleteFolders).length
+            }
+        } as Reply);
+    };
+
     export const deleteFile = async (req: Request, res: Response) => {
         const path = preprocessingPath(req);
         try {
@@ -293,6 +355,29 @@ export namespace FrontendApiController {
             logger.error(error);
             res.status(500).json({status: false, msg: error} as Reply);
         }
+    };
+
+    export const deleteFiles = async (req: Request, res: Response) => {
+        const {deleteFiles} = req.body;
+        let success = 0;
+        let fail = 0;
+        for (const file of <string[]>deleteFiles) {
+            try {
+                rmSync(file);
+                success++;
+            } catch (err) {
+                logger.error(err);
+                fail++;
+            }
+        }
+        res.status(200).json({
+            status: true,
+            data: {
+                success,
+                fail,
+                total: (<string[]>deleteFiles).length
+            }
+        } as Reply);
     };
 
     export const getFileContent = async (req: Request, res: Response) => {
@@ -333,8 +418,18 @@ export namespace FrontendApiController {
             (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
+    export const renameFiles = async (req: Request, res: Response) => {
+        await filesOperation(req, res, FileOperation.FILE_RENAME,
+            (sourcePath, destPath) => rename(sourcePath, destPath));
+    };
+
     export const copyFile = async (req: Request, res: Response) => {
         await fileOperation(req, res, FileOperation.FILE_COPY,
+            (sourcePath, destPath) => cp(sourcePath, destPath));
+    };
+
+    export const copyFiles = async (req: Request, res: Response) => {
+        await filesOperation(req, res, FileOperation.FILE_COPY,
             (sourcePath, destPath) => cp(sourcePath, destPath));
     };
 
@@ -343,8 +438,18 @@ export namespace FrontendApiController {
             (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
+    export const renameFolders = async (req: Request, res: Response) => {
+        await filesOperation(req, res, FileOperation.DIR_RENAME,
+            (sourcePath, destPath) => rename(sourcePath, destPath));
+    };
+
     export const copyFolder = async (req: Request, res: Response) => {
         await fileOperation(req, res, FileOperation.DIR_COPY,
+            (sourcePath, destPath) => cp(sourcePath, destPath, {recursive: true}));
+    };
+
+    export const copyFolders = async (req: Request, res: Response) => {
+        await filesOperation(req, res, FileOperation.DIR_COPY,
             (sourcePath, destPath) => cp(sourcePath, destPath, {recursive: true}));
     };
 
@@ -419,7 +524,7 @@ export namespace FrontendApiController {
                 res.status(404).json({
                     status: false,
                     msg: `Can not found chunk file ${chunkHash}`
-                });
+                } as Reply);
                 return;
             }
             const data = readFileSync(chunkSavePath);
@@ -442,7 +547,7 @@ export namespace FrontendApiController {
             res.status(500).json({
                 status: false,
                 msg: "An error occurred in the merged file"
-            });
+            } as Reply);
         }
     };
 
