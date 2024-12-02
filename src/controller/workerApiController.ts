@@ -1,22 +1,16 @@
 import {NextFunction, Request, Response} from "express";
-import {WorkerManager} from "@/module/workerManager";
-import {TargetNotFoundError} from "@/error/requestError";
-import {HttpCode} from "@/utils/httpCode";
+import {logger} from "@/base/logger";
+import {WorkerService} from "@/service/workerService";
 
 export namespace WorkerApiController {
     export const checkWorker = async (req: Request, res: Response, next: NextFunction) => {
-        const {id} = req.query;
-        const worker = WorkerManager.getWorker(id as string);
-        if (!worker) {
-            next(new TargetNotFoundError(`Worker ${id} not found`));
-            return;
+        try {
+            const {id} = req.query;
+            const data = await WorkerService.getWorkerStatus(id as string);
+            res.status(data.code).json(data.response);
+        } catch (err) {
+            logger.error(err);
+            next(err);
         }
-        res.status(HttpCode.OK).json({
-            status: true,
-            data: {
-                finished: worker.finished,
-                exception: worker.exception !== undefined
-            }
-        } as Reply);
     }
 }

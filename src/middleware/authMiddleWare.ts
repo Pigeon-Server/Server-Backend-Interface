@@ -4,13 +4,13 @@ import {api} from "@/base/logger";
 import {Config} from "@/base/config";
 import {TokenExpiredError, verify} from "jsonwebtoken";
 import {Utils} from "@/utils/utils";
-import {EncryptUtils} from "@/utils/encryptUtils";
 import {HttpCode} from "@/utils/httpCode";
+import {AuthService} from "@/service/authService";
 
 export namespace AuthMiddleware {
     import serverConfig = Config.serverConfig;
     import translateTime = Utils.translateTime;
-    import generateJWTToken = EncryptUtils.generateJWTToken;
+    import generateJWTToken = AuthService.generateJWTToken;
     const tracker = new Tracker(serverConfig.callLimit.count, serverConfig.callLimit.time);
 
     export const checkCallLimit = (req: Request, res: Response, next: NextFunction) => {
@@ -61,12 +61,12 @@ export namespace AuthMiddleware {
                         token: generateJWTToken({
                             username: data.username,
                             permission: data.permission
-                        }, serverConfig.jwt.expiresIn, serverConfig.jwt.secretKey),
+                        }),
                         refreshToken: generateJWTToken({
                             username: data.username,
                             permission: data.permission,
                             type: "refresh"
-                        }, serverConfig.jwt.refreshTokenExpiresIn, serverConfig.jwt.secretKey)
+                        })
                     } as AuthInfo
                 } as Reply);
                 return;

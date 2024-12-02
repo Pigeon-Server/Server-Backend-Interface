@@ -10,7 +10,6 @@
 
 import {createHash} from "crypto";
 import {readFileSync} from "fs";
-import {sign} from "jsonwebtoken";
 
 export namespace EncryptUtils {
 
@@ -36,15 +35,5 @@ export namespace EncryptUtils {
 
     export function encryptPassword(password: string, salt: string): string {
         return encryptSHA256(`${salt.substring(0, 16)}.${password}.${salt.substring(16)}`);
-    }
-
-    export function generateJWTToken(payload: object, expiresIn: string, secretKey: string): string {
-        return sign(payload, secretKey,
-            {
-                expiresIn,
-                algorithm: "HS256",
-                issuer: "Pigeon Server Team",
-                subject: "Server Backend Interface"
-            });
     }
 }

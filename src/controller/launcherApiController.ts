@@ -7,27 +7,25 @@
  * @date 2024.03.15
  * @license GNU General Public License (GPL)
  **********************************************/
-import {Request, Response} from "express";
+import {NextFunction, Request, Response} from "express";
 import {Config} from "@/base/config";
-import {api, file} from "@/base/logger";
+import {api, file, logger} from "@/base/logger";
 import {EncryptUtils} from "@/utils/encryptUtils";
-import {Utils} from "@/utils/utils";
 import {accessSync, constants} from "fs";
 import {SyncFileManager} from "@/module/syncFileManager";
-import {Database} from "@/database/database";
+import {HttpCode} from "@/utils/httpCode";
+import {InternalServerError, TargetNotFoundError} from "@/error/requestError";
+import {LauncherService} from "@/service/launcherService";
 
 export namespace LauncherApiController {
     import updateConfig = Config.updateConfig;
     import encryptSHA1 = EncryptUtils.encryptSHA1;
     import encryptFile = EncryptUtils.encryptFile;
-    import generateKey = Utils.generateKey;
     import syncConfigCache = SyncFileManager.syncConfigCache;
-    import generateJsonToClient = SyncFileManager.generateJsonToClient;
-    import encryptMD5 = EncryptUtils.encryptMD5;
 
     export const interfaceDeprecatedHandler = (req: Request, res: Response) => {
         api.warn(`Interface ${req.url} accessed by method ${req.method} has been deprecated`);
-        res.status(405).json({
+        res.status(HttpCode.MethodNotAllowed).json({
             status: false,
             msg: "此接口已被弃用,请更新启动器"
         } as Reply);
@@ -39,93 +37,41 @@ export namespace LauncherApiController {
     };
 
     export const updateLinkHandler = (_: Request, res: Response) => {
-        const jarConfig = {
-            "jar": updateConfig.launchUpdate.baseUrl + "/api/launcher/get_jar",
+        api.info(`Send update link to client`);
+        res.status(HttpCode.OK).json({
+            "jar": `${updateConfig.launchUpdate.baseUrl}/api/launcher/get_jar`,
             "jarsha1": encryptFile(updateConfig.launchUpdate.jarPath, encryptSHA1),
             "changeLog": updateConfig.launchUpdate.changeLog,
             "version": updateConfig.launchUpdate.version
-        };
-        api.info(`Send update link to client`);
-        res.status(200).json(jarConfig);
+        });
     };
 
-    export const getAccessKeyHandler = async (req: Request, res: Response) => {
-        const {
-            macAddress,
-            username,
-            uuid,
-            packName
-        } = req.body;
-        const result = await Database.getKey({
-            username,
-            uuid,
-            macAddress,
-            packName
-        } as PlayerGetKeyInfo).catch(err => api.error(err.message));
-        if (result === undefined) {
-            api.warn(`Access Denial: Mysql database error.`);
-            res.status(500).json({
-                status: false,
-                msg: "服务器内部出错,请联系管理员"
-            } as Reply);
-            return;
+    export const getAccessKeyHandler = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const {macAddress, username, uuid, packName} = req.body;
+            const data = await LauncherService.getAccessKey({
+                ip: req.ip, key: "", macAddress, packName, username, uuid
+            } as PlayerCreateKeyInfo);
+            res.status(data.code).json(data.response);
+        } catch (err) {
+            logger.error(err);
+            next(new InternalServerError());
         }
-        if (result !== null) {
-            api.info(`Send key ${result.accessKey} for ${username}.`);
-            res.status(200).json({
-                status: true,
-                data: result.accessKey
-            } as Reply);
-            return;
-        }
-        const key = generateKey();
-        Database.createKey(<PlayerCreateKeyInfo>{
-            username,
-            uuid,
-            macAddress,
-            ip: req.ip,
-            key,
-            packName
-        }).then((_) => {
-            api.info(`Generate new key ${key} for ${username}.`);
-            res.status(200).json({
-                status: true,
-                data: key
-            } as Reply);
-        }).catch(err => {
-            api.error(err.message);
-            res.status(500).json({
-                status: false,
-                msg: "服务器内部出错,请联系管理员"
-            } as Reply);
-        })
     };
 
-    export const checkUpdateHandler = (req: Request, res: Response) => {
-        const {
-            packName,
-            localSource
-        } = req.body;
-        res.setHeader("X-Update-Max-Threads", updateConfig.updateMaxThread);
-        const clientJson = generateJsonToClient(syncConfigCache[<string>packName]);
-        if (encryptMD5(JSON.stringify(clientJson)) !== syncConfigCache[<string>packName].md5) {
-            api.warn(`Access Denial: Profile MD5 validation failed.`);
-            res.status(515).json({
-                status: false,
-                msg: "服务器配置文件验证失败,请联系管理员"
-            } as Reply);
-            return;
+    export const checkUpdateHandler = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const {packName, localSource} = req.body;
+            const data = await LauncherService.getPackageConfigFile(packName, localSource);
+            res.setHeader("X-Update-Max-Threads", updateConfig.updateMaxThread);
+            res.status(data.code).json(data.response);
+        } catch (err) {
+            logger.error(err);
+            next(err);
         }
-        if (localSource !== undefined && (<string>localSource).toLowerCase() === syncConfigCache[<string>packName].md5) {
-            api.info(`Same MD5 ${localSource} with client, send nothing.`);
-            res.status(304).send();
-            return;
-        }
-        api.info(`Send package config to client for ${packName}`);
-        res.status(200).json(clientJson);
     };
 
-    export const getSourceHandler = (req: Request, res: Response) => {
+    export const getSourceHandler = (req: Request, res: Response, next: NextFunction) => {
         const {
             macAddress,
             uuid,
@@ -143,10 +89,7 @@ export namespace LauncherApiController {
         } catch (err: any) {
             api.error(err.message);
             api.warn(`Access Denial: Unable to find file.`);
-            res.status(404).json({
-                status: false,
-                msg: "更新文件出错,请联系管理员"
-            } as Reply);
+            next(new TargetNotFoundError("更新文件出错,请联系管理员"));
         }
     };
 }

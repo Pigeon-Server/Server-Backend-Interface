@@ -27,3 +27,8 @@ type FileOperationParam = {
     sourcePath: string,
     destPath: string
 }
+
+type ServiceReturn = {
+    code: number,
+    response: Reply
+}

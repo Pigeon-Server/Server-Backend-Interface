@@ -32,3 +32,21 @@ export class ParamMismatchError extends RequestError {
         super(HttpCode.BadRequest, message);
     }
 }
+
+export class RefererError extends RequestError {
+    constructor(message: string = "Direct access to this interface is not allowed") {
+        super(HttpCode.BadRequest, message);
+    }
+}
+
+export class CSRFAttachError extends RequestError {
+    constructor(message: string = "You may have suffered a CSRF attack") {
+        super(HttpCode.BadRequest, message);
+    }
+}
+
+export class InternalServerError extends RequestError {
+    constructor(message: string = "服务器内部出错,请联系管理员") {
+        super(HttpCode.InternalServerError, message);
+    }
+}

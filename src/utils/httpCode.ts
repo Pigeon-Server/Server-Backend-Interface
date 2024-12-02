@@ -16,5 +16,6 @@ export enum HttpCode {
     TooManyRequests = 429,
 
     InternalServerError = 500,
-    NotImplemented
+    NotImplemented,
+    ConfigValidationFail = 515
 }
