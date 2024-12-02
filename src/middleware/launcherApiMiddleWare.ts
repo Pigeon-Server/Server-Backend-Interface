@@ -6,6 +6,7 @@ import {getPlayerStatus} from "@/module/apiManager";
 import {accessSync, constants} from "fs";
 import {SyncFileManager} from "@/module/syncFileManager";
 import {Database} from "@/database/database";
+import {HttpCode} from "@/utils/httpCode";
 
 export namespace LauncherApiMiddleWare {
     import serverConfig = Config.serverConfig;
@@ -15,10 +16,9 @@ export namespace LauncherApiMiddleWare {
     export const checkCallLimit = (req: Request, res: Response, next: NextFunction) => {
         const {macAddress} = req.method === 'GET' ? req.query : req.body;
         api.info(`New access from ${req.ip} is processing by apiController.`);
-        // api访问限制
         if (!tracker.trackIP(req.ip!, <string>macAddress)) {
             api.warn(`Access Denial: Api call limit`);
-            res.status(429).json({status: false, msg: "超出API访问限制"});
+            res.status(HttpCode.TooManyRequests).json({status: false, msg: "超出API访问限制"});
             return;
         }
         next();

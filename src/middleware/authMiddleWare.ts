@@ -5,6 +5,7 @@ import {Config} from "@/base/config";
 import {TokenExpiredError, verify} from "jsonwebtoken";
 import {Utils} from "@/utils/utils";
 import {EncryptUtils} from "@/utils/encryptUtils";
+import {HttpCode} from "@/utils/httpCode";
 
 export namespace AuthMiddleware {
     import serverConfig = Config.serverConfig;
@@ -14,10 +15,9 @@ export namespace AuthMiddleware {
 
     export const checkCallLimit = (req: Request, res: Response, next: NextFunction) => {
         api.info(`New access from ${req.ip} is processing by authApiController`);
-        // api访问限制
         if (!tracker.trackIP(req.ip!)) {
             api.warn(`Access Denial: Api call limit`);
-            res.status(429).json({status: false, msg: "超出API访问限制"});
+            res.status(HttpCode.TooManyRequests).json({status: false, msg: "超出API访问限制"});
             return;
         }
         next();

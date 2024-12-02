@@ -27,4 +27,3 @@ type FileOperationParam = {
     sourcePath: string,
     destPath: string
 }
-

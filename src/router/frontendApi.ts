@@ -40,6 +40,7 @@ frontendApiRouter.post("/folder/rename", FrontendApiController.renameFolder);
 frontendApiRouter.post("/folder/move", FrontendApiController.renameFolder);
 frontendApiRouter.post("/folder/copy", FrontendApiController.copyFolder);
 frontendApiRouter.delete("/folder", FrontendApiController.deleteFolders);
+frontendApiRouter.get("/folder", FrontendApiController.getAllFile);
 frontendApiRouter.get("/folder/:path", FrontendApiController.getFileList);
 frontendApiRouter.post("/folder/:path", FrontendApiController.createFolder);
 frontendApiRouter.delete("/folder/:path", FrontendApiController.deleteFolder);

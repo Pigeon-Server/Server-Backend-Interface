@@ -7,7 +7,7 @@
  * @date 2024.03.03
  * @license GNU General Public License (GPL)
  **********************************************/
-import fs, {accessSync, constants, mkdirSync, readdirSync, statSync, WriteFileOptions, writeFileSync} from "fs";
+import {accessSync, constants, mkdirSync, readdirSync, statSync, WriteFileOptions, writeFileSync} from "fs";
 import {join, relative} from "path";
 import {EncryptUtils} from "./encryptUtils";
 import moment from "moment-timezone";
@@ -18,6 +18,8 @@ import moment from "moment-timezone";
  * @export
  */
 export namespace FileUtils {
+    import encryptMD5 = EncryptUtils.encryptMD5;
+    import encryptFile = EncryptUtils.encryptFile;
 
     export enum FileOperation {
         FILE_RENAME,
@@ -33,9 +35,6 @@ export namespace FileUtils {
         SOURCE_NOT_FOUND,
         DEST_EXIST
     }
-
-    import encryptFile = EncryptUtils.encryptFile;
-    import encryptMD5 = EncryptUtils.encryptMD5;
 
     /**
      * @function
@@ -149,7 +148,7 @@ export namespace FileUtils {
         return content;
     }
 
-    export function getFileTree(directory: string) {
+    export function getFileTree(directory: string, basePath: string) {
         const tree: FileInfo[] = [];
         const files = readdirSync(directory);
         files.forEach(file => {
@@ -158,7 +157,7 @@ export namespace FileUtils {
             if (stat.isFile()) {
                 tree.push({
                     name: file,
-                    path: filePath,
+                    path: filePath.substring(basePath.length).replaceAll("\\", "/"),
                     isFile: true,
                     size: stat.size,
                     editTime: moment(stat.ctime).format("YYYY-MM-DD HH:mm:ss")
@@ -166,7 +165,7 @@ export namespace FileUtils {
             } else if (stat.isDirectory()) {
                 tree.push({
                     name: file,
-                    path: filePath,
+                    path: filePath.substring(basePath.length).replaceAll("\\", "/"),
                     isFile: false,
                     editTime: moment(stat.ctime).format("YYYY-MM-DD HH:mm:ss")
                 } as FileInfo);

@@ -1,6 +1,5 @@
 import path from "path";
 import alias from "module-alias";
-
 alias(path.resolve(__dirname, "../"));
 
 import {connectionLogger, logger} from "@/base/logger";
@@ -23,12 +22,13 @@ import {serverApiRouter} from "@/router/serverApi";
 import {ServerLifeCycle, ServerLifeCycleEvent} from "@/base/lifeCycle";
 import {SyncFileManager} from "@/module/syncFileManager";
 import {PropertyMonitor} from "@/module/propertyMonitor";
+import {LauncherApiController} from "@/controller/launcherApiController";
+import session from "express-session";
+import {workerApiRouter} from "@/router/workerApi";
 
 import initDatabase = Database.initDatabase;
 import serverConfig = Config.serverConfig;
 import checkFileExist = FileUtils.checkFileExist;
-import {LauncherApiController} from "@/controller/launcherApiController";
-import session from "express-session";
 
 ServerLifeCycle.addEventHandler(ServerLifeCycleEvent.ServerDatabaseInit, SyncFileManager.checkSyncCache);
 
@@ -71,6 +71,7 @@ app.use("/api/server", serverApiRouter);
 app.use("/api/ui", frontendApiRouter);
 app.use("/api/auth", authApiRouter);
 app.use("/api/oauth", oauthApiRouter);
+app.use("/api/worker", workerApiRouter);
 
 // 兼容 liteUI 0.1.3
 app.get("/api/update_link", LauncherApiController.updateLinkHandler);

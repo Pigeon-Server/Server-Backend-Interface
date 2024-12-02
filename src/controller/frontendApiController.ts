@@ -1,17 +1,26 @@
-import {Request, Response} from "express";
+import {NextFunction, Request, Response} from "express";
 import {SyncFileManager} from "@/module/syncFileManager";
 import {Utils} from "@/utils/utils";
 import {FileUtils} from "@/utils/fileUtils";
 import {join} from "path";
 import {Config} from "@/base/config";
-import {readFileSync, rmSync, statSync, writeFileSync} from "fs";
+import {createWriteStream, readFileSync, rmSync, statSync, writeFileSync} from "fs";
 import {logger} from "@/base/logger";
 import {Database} from "@/database/database";
 import {cp, rename} from "fs/promises";
-import {createWriteStream} from "fs";
 import archiver from "archiver";
 import AdmZip from "adm-zip";
 import {EncryptUtils} from "@/utils/encryptUtils";
+import {
+    FileExistsError,
+    IllegalPathError,
+    ParamMismatchError,
+    RequestError,
+    TargetNotFoundError
+} from "@/error/requestError";
+import {HttpCode} from "@/utils/httpCode";
+import {ExitCode, WorkerManager} from "@/module/workerManager";
+import {WorkerExistError} from "@/error/workerError";
 
 export namespace FrontendApiController {
     import reloadSyncConfig = SyncFileManager.reloadSyncConfig;
@@ -27,21 +36,28 @@ export namespace FrontendApiController {
     import serverConfig = Config.serverConfig;
 
     const checkPath = (path: string) => {
-        return path.startsWith(updateConfig.fileBasePath) ? path : join(updateConfig.fileBasePath, path);
+        path = path.startsWith(updateConfig.fileBasePath) ? path : join(updateConfig.fileBasePath, path);
+        path = path.normalize();
+        if (!path.startsWith(updateConfig.fileBasePath)) {
+            throw new IllegalPathError();
+        }
+        return path;
     };
 
-    const preprocessingPath = (req: Request) => {
-        return checkPath(req.params.path);
+    const preprocessingPath = (req: Request, next: NextFunction) => {
+        try {
+            return checkPath(req.params.path);
+        } catch (err) {
+            next(err);
+            return undefined
+        }
     };
 
-    const filesOperation = async (req: Request, res: Response, operation: FileOperation,
+    const filesOperation = async (req: Request, res: Response, next: NextFunction, operation: FileOperation,
                                   successCallback: (sourcePath: string, destPath: string) => Promise<void>) => {
         let {fileList} = req.body;
         if (fileList === undefined) {
-            res.status(400).json({
-                status: false,
-                msg: "缺少查询参数"
-            } as Reply);
+            next(new ParamMismatchError());
             return;
         }
         let success = 0;
@@ -63,7 +79,7 @@ export namespace FrontendApiController {
                     break;
             }
         }
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: {
                 success,
@@ -73,14 +89,11 @@ export namespace FrontendApiController {
         } as Reply);
     };
 
-    const fileOperation = async (req: Request, res: Response, operation: FileOperation,
+    const fileOperation = async (req: Request, res: Response, next: NextFunction, operation: FileOperation,
                                  successCallback: (sourcePath: string, destPath: string) => Promise<void>) => {
         let {sourcePath, destPath} = req.body;
         if ([sourcePath, destPath].includes(undefined)) {
-            res.status(400).json({
-                status: false,
-                msg: "缺少查询参数"
-            } as Reply);
+            next(new ParamMismatchError());
             return;
         }
         sourcePath = checkPath(sourcePath);
@@ -89,50 +102,53 @@ export namespace FrontendApiController {
         switch (checkResult) {
             case CheckResult.PASSED:
                 await successCallback(sourcePath, destPath);
-                res.status(200).json({
+                res.status(HttpCode.OK).json({
                     status: true
                 } as Reply);
                 break;
             case CheckResult.DEST_EXIST:
-                res.status(400).json({
-                    status: false,
-                    msg: "存在同名文件"
-                } as Reply);
+                next(new FileExistsError());
                 break;
             case CheckResult.SOURCE_NOT_FOUND:
-                res.status(404).json({
-                    status: false,
-                    msg: "无法找到指定文件"
-                } as Reply);
+                next(new TargetNotFoundError());
                 break;
         }
     };
 
-    export const reloadRules = async (_: Request, res: Response) => {
+    export const reloadRules = async (_: Request, res: Response, next: NextFunction) => {
+        let workerId: string;
+        try {
+            workerId = WorkerManager.newWorker("Rule reload task");
+        } catch (err) {
+            if (err instanceof WorkerExistError) {
+                res.status(HttpCode.Accepted).json({
+                    status: true,
+                    msg: "重载任务已提交, 重载可能需要一定时间",
+                    data: err.workerId
+                } as Reply);
+            }
+            return;
+        }
+        res.status(HttpCode.Accepted).json({
+            status: true,
+            msg: "重载任务已提交, 重载可能需要一定时间",
+            data: workerId
+        } as Reply);
         const status = await reloadSyncConfig();
         if (status) {
-            res.status(200).json({
-                status: true,
-                msg: "重载同步规则成功",
-                data: status
-            } as Reply);
+            WorkerManager.workerFinish(workerId, ExitCode.Normal);
             return;
         } else {
-            res.status(500).json({
-                status: false,
-                msg: "重载同步规则失败"
-            } as Reply);
+            WorkerManager.workerFinish(workerId, ExitCode.Exception);
+            next(new RequestError(HttpCode.InternalServerError, "重载同步规则失败"));
         }
     };
 
-    export const getRule = async (req: Request, res: Response) => {
+    export const getRule = async (req: Request, res: Response, next: NextFunction) => {
         const ruleId = Number(req.params.id);
         const root = await Database.getSyncConfigRoot(ruleId);
         if (root === null) {
-            res.status(404).json({
-                status: false,
-                msg: `无法找到Id为${ruleId}的同步规则`
-            } as Reply);
+            next(new TargetNotFoundError(`无法找到Id为${ruleId}的同步规则`));
             return
         }
         const data = await Database.getSyncConfigDetail(ruleId);
@@ -165,7 +181,7 @@ export namespace FrontendApiController {
                 }, [] as RuleFolder[])
             }
         };
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: rule
         } as Reply);
@@ -186,7 +202,7 @@ export namespace FrontendApiController {
                 ruleName: folder.ruleName
             } as RuleFolderUpdate);
         }
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: ruleId
         } as Reply);
@@ -195,7 +211,7 @@ export namespace FrontendApiController {
     export const realDeleteRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
         await Database.realDeleteSyncConfig(ruleId);
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: ruleId
         } as Reply);
@@ -204,7 +220,7 @@ export namespace FrontendApiController {
     export const deleteRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
         await Database.deleteSyncConfig(ruleId);
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: ruleId
         } as Reply);
@@ -213,7 +229,7 @@ export namespace FrontendApiController {
     export const restoreRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
         await Database.restoreSyncConfig(ruleId);
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: ruleId
         } as Reply);
@@ -250,7 +266,7 @@ export namespace FrontendApiController {
                 ruleName: folder.ruleName
             });
         }
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true
         } as Reply);
     };
@@ -258,7 +274,7 @@ export namespace FrontendApiController {
     export const enableRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
         await Database.enableSyncConfig(ruleId);
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: ruleId
         } as Reply);
@@ -267,59 +283,75 @@ export namespace FrontendApiController {
     export const disableRule = async (req: Request, res: Response) => {
         const ruleId = Number(req.params.id);
         await Database.disableSyncConfig(ruleId);
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: ruleId
         } as Reply);
     };
 
-    export const getRuleList = async (req: Request, res: Response) => {
+    export const getRuleList = async (req: Request, res: Response, next: NextFunction) => {
         const {search, pageSize, currentPage} = req.body;
         if ([search, pageSize, currentPage].includes(undefined)) {
-            res.status(400).json({
-                status: false,
-                msg: "缺少查询参数"
-            } as Reply);
+            next(new ParamMismatchError());
             return;
         }
         const data = await Database.getSyncConfigPage(
             pageSize * (currentPage - 1) + 1,
             pageSize * currentPage,
             search);
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data
         } as Reply)
     };
 
-    export const getFileList = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
-        res.status(200).json({
+    export const getAllFile = async (_: Request, res: Response) => {
+        res.status(HttpCode.OK).json({
             status: true,
-            data: FileUtils.getFileTree(path)
+            data: FileUtils.getFileTree(updateConfig.fileBasePath, updateConfig.fileBasePath)
         } as Reply);
     };
 
-    export const createFile = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+    export const getFileList = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
+        res.status(HttpCode.OK).json({
+            status: true,
+            data: FileUtils.getFileTree(path, updateConfig.fileBasePath)
+        } as Reply);
+    };
+
+    export const createFile = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
         checkFileExist(path, true);
-        res.status(200).json({status: true} as Reply);
+        res.status(HttpCode.OK).json({status: true} as Reply);
     };
 
-    export const createFolder = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+    export const createFolder = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
         checkDirExist(path, true);
-        res.status(200).json({status: true} as Reply);
+        res.status(HttpCode.OK).json({status: true} as Reply);
     };
 
-    export const deleteFolder = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+    export const deleteFolder = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
         try {
             rmSync(path, {recursive: true, force: true});
-            res.status(200).json({status: true} as Reply);
+            res.status(HttpCode.OK).json({status: true} as Reply);
         } catch (error) {
             logger.error(error);
-            res.status(500).json({status: false, msg: error} as Reply);
+            next(error);
         }
     };
 
@@ -336,7 +368,7 @@ export namespace FrontendApiController {
                 fail++;
             }
         }
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: {
                 success,
@@ -346,14 +378,17 @@ export namespace FrontendApiController {
         } as Reply);
     };
 
-    export const deleteFile = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+    export const deleteFile = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
         try {
             rmSync(path);
-            res.status(200).json({status: true} as Reply);
+            res.status(HttpCode.OK).json({status: true} as Reply);
         } catch (error) {
             logger.error(error);
-            res.status(500).json({status: false, msg: error} as Reply);
+            next(error);
         }
     };
 
@@ -370,7 +405,7 @@ export namespace FrontendApiController {
                 fail++;
             }
         }
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: {
                 success,
@@ -380,112 +415,106 @@ export namespace FrontendApiController {
         } as Reply);
     };
 
-    export const getFileContent = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+    export const getFileContent = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
         const stat = statSync(path);
         if (stat.isFile()) {
-            res.status(200).json({
+            res.status(HttpCode.OK).json({
                 status: true,
                 data: readFileSync(path, {encoding: 'utf8'})
             } as Reply);
         } else {
-            res.status(404).json({
-                status: false,
-                msg: "指定文件不存在"
-            } as Reply);
+            next(new TargetNotFoundError());
         }
     };
 
-    export const updateFileContent = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+    export const updateFileContent = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
         const stat = statSync(path);
         const data = req.body.data;
         if (stat.isFile()) {
             writeFileSync(path, data, {encoding: 'utf8'});
-            res.status(200).json({
+            res.status(HttpCode.OK).json({
                 status: true,
             } as Reply);
         } else {
-            res.status(404).json({
-                status: false,
-                msg: "指定文件不存在"
-            } as Reply);
+            next(new TargetNotFoundError());
         }
     };
 
-    export const renameFile = async (req: Request, res: Response) => {
-        await fileOperation(req, res, FileOperation.FILE_RENAME,
+    export const renameFile = async (req: Request, res: Response, next: NextFunction) => {
+        await fileOperation(req, res, next, FileOperation.FILE_RENAME,
             (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
-    export const renameFiles = async (req: Request, res: Response) => {
-        await filesOperation(req, res, FileOperation.FILE_RENAME,
+    export const renameFiles = async (req: Request, res: Response, next: NextFunction) => {
+        await filesOperation(req, res, next, FileOperation.FILE_RENAME,
             (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
-    export const copyFile = async (req: Request, res: Response) => {
-        await fileOperation(req, res, FileOperation.FILE_COPY,
+    export const copyFile = async (req: Request, res: Response, next: NextFunction) => {
+        await fileOperation(req, res, next, FileOperation.FILE_COPY,
             (sourcePath, destPath) => cp(sourcePath, destPath));
     };
 
-    export const copyFiles = async (req: Request, res: Response) => {
-        await filesOperation(req, res, FileOperation.FILE_COPY,
+    export const copyFiles = async (req: Request, res: Response, next: NextFunction) => {
+        await filesOperation(req, res, next, FileOperation.FILE_COPY,
             (sourcePath, destPath) => cp(sourcePath, destPath));
     };
 
-    export const renameFolder = async (req: Request, res: Response) => {
-        await fileOperation(req, res, FileOperation.DIR_RENAME,
+    export const renameFolder = async (req: Request, res: Response, next: NextFunction) => {
+        await fileOperation(req, res, next, FileOperation.DIR_RENAME,
             (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
-    export const renameFolders = async (req: Request, res: Response) => {
-        await filesOperation(req, res, FileOperation.DIR_RENAME,
+    export const renameFolders = async (req: Request, res: Response, next: NextFunction) => {
+        await filesOperation(req, res, next, FileOperation.DIR_RENAME,
             (sourcePath, destPath) => rename(sourcePath, destPath));
     };
 
-    export const copyFolder = async (req: Request, res: Response) => {
-        await fileOperation(req, res, FileOperation.DIR_COPY,
+    export const copyFolder = async (req: Request, res: Response, next: NextFunction) => {
+        await fileOperation(req, res, next, FileOperation.DIR_COPY,
             (sourcePath, destPath) => cp(sourcePath, destPath, {recursive: true}));
     };
 
-    export const copyFolders = async (req: Request, res: Response) => {
-        await filesOperation(req, res, FileOperation.DIR_COPY,
+    export const copyFolders = async (req: Request, res: Response, next: NextFunction) => {
+        await filesOperation(req, res, next, FileOperation.DIR_COPY,
             (sourcePath, destPath) => cp(sourcePath, destPath, {recursive: true}));
     };
 
-    export const downloadFile = async (req: Request, res: Response) => {
-        const path = preprocessingPath(req);
+    export const downloadFile = async (req: Request, res: Response, next: NextFunction) => {
+        const path = preprocessingPath(req, next);
+        if (!path) {
+            return
+        }
         if (checkFileExist(path)) {
             res.download(path);
             return;
         }
-        res.status(404).json({
-            status: false,
-            msg: "文件不存在"
-        } as Reply);
+        next(new TargetNotFoundError());
     };
 
-    export const uploadFile = async (req: Request, res: Response) => {
+    export const uploadFile = async (req: Request, res: Response, next: NextFunction) => {
         const {index, hash} = req.body;
         const file = req.file;
         if (file === undefined) {
-            res.status(400).json({
-                status: false,
-                msg: 'No file upload'
-            } as Reply);
+            next(new RequestError(HttpCode.BadRequest, 'No file upload'));
             return;
         }
         const sha256 = encryptFile(file.path, encryptSHA256);
         if (sha256 !== hash) {
-            res.status(400).json({
-                status: false,
-                msg: 'Block hash verification failed'
-            } as Reply);
+            next(new RequestError(HttpCode.BadRequest, 'Block hash verification failed'));
             return;
         }
         const chunkFilePath = join(file.destination, `${hash}.tmp`);
         if (checkFileExist(chunkFilePath)) {
-            res.status(200).json({
+            res.status(HttpCode.OK).json({
                 status: true,
                 data: {
                     pass: true,
@@ -495,7 +524,7 @@ export namespace FrontendApiController {
             return;
         }
         await rename(file.path, chunkFilePath);
-        res.status(200).json({
+        res.status(HttpCode.OK).json({
             status: true,
             data: {
                 pass: false,
@@ -504,27 +533,21 @@ export namespace FrontendApiController {
         } as Reply);
     };
 
-    export const mergeFile = async (req: Request, res: Response) => {
+    export const mergeFile = async (req: Request, res: Response, next: NextFunction) => {
         const {fileName, chunkHashList, removeChunkFile} = req.body;
         const fileSavePath = checkPath(fileName);
         const output = createWriteStream(fileSavePath);
 
         output.on("error", (err) => {
             logger.error(err.message);
-            res.status(500).json({
-                status: false,
-                msg: "An error occurred in the merged file"
-            } as Reply);
+            next(new RequestError(HttpCode.InternalServerError, "An error occurred in the merged file"));
             throw err;
         });
 
         (chunkHashList as string[]).map((chunkHash) => {
             const chunkSavePath = join(serverConfig.uploadPath, `${chunkHash}.tmp`);
             if (!checkFileExist(chunkSavePath)) {
-                res.status(404).json({
-                    status: false,
-                    msg: `Can not found chunk file ${chunkHash}`
-                } as Reply);
+                next(new TargetNotFoundError(`Can not found chunk file ${chunkHash}`));
                 return;
             }
             const data = readFileSync(chunkSavePath);
@@ -539,54 +562,87 @@ export namespace FrontendApiController {
             }
 
             output.end(() => {
-                res.status(200).json({
+                res.status(HttpCode.OK).json({
                     status: true
                 });
             });
         } catch (err: any) {
-            res.status(500).json({
-                status: false,
-                msg: "An error occurred in the merged file"
-            } as Reply);
+            next(new RequestError(HttpCode.InternalServerError, "An error occurred in the merged file"));
         }
     };
 
     export const compression = async (req: Request, res: Response) => {
         let {fileList, compressFileName} = req.body;
         compressFileName = checkPath(compressFileName);
-        res.status(200).json({
-            status: true,
-            msg: `压缩任务已提交，压缩可能需要一点时间`
-        } as Reply);
-        const output = createWriteStream(compressFileName, {encoding: 'utf8'});
-        const archive = archiver('zip', {zlib: {level: 9}});
-        archive.on('warning', (err) => logger.warn(err));
-        archive.on('error', (err) => logger.error(err));
-        output.on('close', () => logger.info(`Create zip file finish, path: ${compressFileName}, size: ${archive.pointer()} bytes`));
-        archive.pipe(output);
-        (fileList as CompressFile[]).forEach((file) => {
-            if (file.isFile) {
-                archive.file(file.path, {name: file.path.substring(file.path.lastIndexOf("\\") + 1)})
-            } else {
-                archive.directory(file.path, file.path.substring(file.path.lastIndexOf("\\") + 1));
+        let workerId: string;
+        try {
+            workerId = WorkerManager.newWorker("Compression Task");
+        } catch (err) {
+            if (err instanceof WorkerExistError) {
+                res.status(HttpCode.Accepted).json({
+                    status: true,
+                    msg: `压缩任务已提交，压缩可能需要一点时间`,
+                    data: err.workerId
+                } as Reply);
             }
-        });
-        await archive.finalize();
+            return;
+        }
+        res.status(HttpCode.Accepted).json({
+            status: true,
+            msg: `压缩任务已提交，压缩可能需要一点时间`,
+            data: workerId
+        } as Reply);
+        try {
+            const output = createWriteStream(compressFileName, {encoding: 'utf8'});
+            const archive = archiver('zip', {zlib: {level: 9}});
+            archive.on('warning', (err) => logger.warn(err));
+            archive.on('error', (err) => logger.error(err));
+            output.on('close', () => logger.info(`Create zip file finish, path: ${compressFileName}, size: ${archive.pointer()} bytes`));
+            archive.pipe(output);
+            (fileList as CompressFile[]).forEach((file) => {
+                if (file.isFile) {
+                    archive.file(file.path, {name: file.path.substring(file.path.lastIndexOf("\\") + 1)})
+                } else {
+                    archive.directory(file.path, file.path.substring(file.path.lastIndexOf("\\") + 1));
+                }
+            });
+            await archive.finalize();
+            WorkerManager.workerFinish(workerId, ExitCode.Normal);
+        } catch (err) {
+            logger.error(err);
+            WorkerManager.workerFinish(workerId, ExitCode.Exception, err as Error);
+        }
     };
 
     export const decompression = async (req: Request, res: Response) => {
         let {compressFileName, targetFolder} = req.body;
         compressFileName = checkPath(compressFileName);
         targetFolder = checkPath(targetFolder);
-        res.status(200).json({
+        let workerId: string;
+        try {
+            workerId = WorkerManager.newWorker("Decompression Task");
+        } catch (err) {
+            if (err instanceof WorkerExistError) {
+                res.status(HttpCode.Accepted).json({
+                    status: true,
+                    msg: `解压缩任务已提交, 解压可能需要一点时间`,
+                    data: err.workerId
+                } as Reply);
+            }
+            return;
+        }
+        res.status(HttpCode.Accepted).json({
             status: true,
-            msg: `解压缩任务已提交, 解压可能需要一点时间`
+            msg: `解压缩任务已提交, 解压可能需要一点时间`,
+            data: workerId
         } as Reply);
         try {
             const zip = new AdmZip(compressFileName);
             zip.extractAllTo(targetFolder, true);
+            WorkerManager.workerFinish(workerId, ExitCode.Normal);
         } catch (err) {
             logger.error(err);
+            WorkerManager.workerFinish(workerId, ExitCode.Exception, err as Error);
         }
     };
 }

@@ -2,6 +2,7 @@ import {Tracker} from "@/module/tracker";
 import {NextFunction, Request, Response} from "express";
 import {api} from "@/base/logger";
 import {Config} from "@/base/config";
+import {HttpCode} from "@/utils/httpCode";
 
 export namespace ServerApiMiddleware {
     import serverConfig = Config.serverConfig;
@@ -9,10 +10,9 @@ export namespace ServerApiMiddleware {
 
     export const checkCallLimit = (req: Request, res: Response, next: NextFunction) => {
         api.info(`New access from ${req.ip} is processing by serverApiController`);
-        // api访问限制
         if (!tracker.trackIP(req.ip!)) {
             api.warn(`Access Denial: Api call limit`);
-            res.status(429).json({status: false, msg: "超出API访问限制"});
+            res.status(HttpCode.TooManyRequests).json({status: false, msg: "超出API访问限制"});
             return;
         }
         next();
